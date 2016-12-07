@@ -4,17 +4,23 @@ Title: Toolbox for Functional Genomics Data Processing in R
 Version: 0.1.0
 Author: Tobias Straub
 Maintainer: Tobias Straub <tobias.straub@lmu.de>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
+Description: R Toolbox for ChIPseq, MNaseSeq, RNASeq and alike
 License: GPL-2
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 5.0.1
-Imports: 
+Imports:
+  GenomicRanges,
   grDevices,
   IRanges,
   stats,
-Suggests: 
+Suggests:
+  data.table,
   parallel,
+  rtracklayer,
+  ShortRead,
   testthat,
-  zoo
+  zoo,
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr

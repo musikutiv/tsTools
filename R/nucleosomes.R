@@ -1,3 +1,51 @@
+#' Convert a bed file to nucleosome dyad coverage
+#'
+#' Single reads will be shifted towards the dyad position assuming an end-localisation of the read
+#' For paired reads the fragment mid points will be considered dyad position
+#'
+#' the bed files for SINGLE should have columns 1) chromosome 2) start 3) end 4) strand
+#' the bed files for PAIRED should have columns 1) chromosome 2) start 3) end
+#'
+#' @param file.id path of the bed file
+#' @param type sequencing library type "SINGLE" or "PAIRED"
+#' @param width width of the dyad, default 1
+#'
+#' @return a coverage object (\code{\link[IRanges]{RleList}} as returned by \code{\link[IRanges]{coverage}})
+#'
+#' @export
+bed2dyad <- function(file.id, type=c("SINGLE","PAIRED"), width=1) {
+
+  if (!requireNamespace("data.table", quietly = TRUE)) {
+    stop("library 'data.table' is needed for this function to work. Please install it.",
+         call. = FALSE)
+  }
+  if (with.wig) {
+    if (!requireNamespace("rtracklayer", quietly = TRUE)) {
+      stop("library 'rtracklayer' is needed for wig export to work. Please install it.",
+           call. = FALSE)
+    }
+  }
+
+  options(scipen=999)
+  shift=73
+
+  bed <- data.frame(fread(file.id))
+
+  if (type=="SINGLE") {
+    bedR <- GRanges(bed[,1], IRanges(bed[,2], bed[,3]), strand=bed[,4])
+    dyads <- resize(bedR, width)
+    amount <- strand(dyads)
+    runValue(amount) <- ifelse(runValue(amount) == "-", -shift, shift)
+    dyads <- GenomicRanges::shift(dyads, as.vector(amount))
+  } else {
+    bedR <- GRanges(bed[,1], IRanges(bed[,2], bed[,3]))
+    dyads <- resize(bedR, width, fix="center")
+  }
+  cov <- coverage(dyads)
+  cov
+}
+
+
 
 #' Bin a matrix column-wise and average the bins across rows
 #'
@@ -48,13 +96,12 @@ norm.square <- function(mat) {t(apply(mat, 1, function(x){x/sqrt(sum(x^2))}))}
 
 #' Plot Raster Heatmap of matrix
 #'
-#' @param mat
+#' @param mat the matrix to be visualized
 #'
 #'
 #' @export
 plotRasterHeatmap <- function(mat) {
-
-    if (!requireNamespace("grid", quietly = TRUE)) {
+  if (!requireNamespace("grid", quietly = TRUE)) {
     stop("library 'grid' is needed for this function to work. Please install it.",
          call. = FALSE)
   }
