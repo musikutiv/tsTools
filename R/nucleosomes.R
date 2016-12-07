@@ -53,8 +53,7 @@ norm.square <- function(mat) {t(apply(mat, 1, function(x){x/sqrt(sum(x^2))}))}
 #'
 #' @export
 plotRasterHeatmap <- function(mat) {
-
-    if (!requireNamespace("grid", quietly = TRUE)) {
+  if (!requireNamespace("grid", quietly = TRUE)) {
     stop("library 'grid' is needed for this function to work. Please install it.",
          call. = FALSE)
   }
