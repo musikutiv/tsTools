@@ -7,18 +7,14 @@
 coverageWindowsStranded(windows, coverage)
 }
 \arguments{
-\item{coverage}{a coverage object (\code{\link[IRanges]{RleList}} as returned by \code{\link[IRanges]{coverage}})}
+\item{windows}{a data frame of windows with columns 'chr', 'start', 'end', 'strand'}
 
-\item{windwos}{a data frame of windows with columns 'chr', 'start', 'end', 'strand'}
+\item{coverage}{a coverage object (\code{\link[IRanges]{RleList}} as returned by \code{\link[IRanges]{coverage}})}
 }
 \value{
 a matrix
 }
 \description{
-Get windowed strand-oriented coverages
-}
-\examples{
-coverageWindowsCenteredStranded()
-
+Out-of-bound windows will be removed!
 }
 

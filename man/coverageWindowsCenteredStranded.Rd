@@ -4,8 +4,7 @@
 \alias{coverageWindowsCenteredStranded}
 \title{Get windowed strand-oriented coverages around center points}
 \usage{
-coverageWindowsCenteredStranded(centers = centers, window.size = 1000,
-  coverage = coverage)
+coverageWindowsCenteredStranded(centers, window.size = 1000, coverage)
 }
 \arguments{
 \item{centers}{a data frame of center points with columns 'chr', 'center', 'strand'}
@@ -18,10 +17,6 @@ coverageWindowsCenteredStranded(centers = centers, window.size = 1000,
 a matrix
 }
 \description{
-Get windowed strand-oriented coverages around center points
-}
-\examples{
-coverageWindowsCenteredStranded()
-
+Out-of-bound windows will be removed!
 }
 

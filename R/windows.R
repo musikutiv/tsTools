@@ -1,6 +1,7 @@
 
 #' Get windowed strand-oriented coverages around center points
 #'
+#' Out-of-bound windows will be removed!
 #'
 #' @param centers a data frame of center points with columns 'chr', 'center', 'strand'
 #' @param window.size the size of the window surrounding the center position, default 1000
@@ -8,26 +9,23 @@
 #'
 #' @return a matrix
 #'
-#' @examples
-#' coverageWindowsCenteredStranded()
-#'
 #' @export
-coverageWindowsCenteredStranded <- function(centers=centers, window.size=1000, coverage=coverage) {
+coverageWindowsCenteredStranded <- function(centers, window.size=1000, coverage) {
 
   centers <- centers[centers$chr %in% names(coverage),]
 
   result <- sapply(names(coverage), function(x) {
     my.cov <- coverage[[x]]
-    my.peaks <- centers[centers$chr==x,]
-    mw.views <- Views(my.cov, start=my.peaks$center-ceiling(window.size/2), width=window.size+1)
+    my.centers <- centers[centers$chr==x,]
+    mw.views <- Views(my.cov, start=my.centers$center-ceiling(window.size/2), width=window.size+1)
     ## remove out-of bounds views
     flt <- start(mw.views)>0 & end(mw.views) < length(my.cov)
     mw.views <- mw.views[flt,]
-    my.peaks <- my.peaks[flt,]
+    my.centers <- my.centers[flt,]
     if (length(mw.views) > 0) {
       mat <- as.matrix(mw.views)
       colnames(mat) <- seq(from=(0-ceiling(window.size/2)), to=0+ceiling(window.size/2))
-      rownames(mat) <- rownames(my.peaks)
+      rownames(mat) <- rownames(my.centers)
       return(mat)
     } else {
       return(NULL)
@@ -44,17 +42,14 @@ coverageWindowsCenteredStranded <- function(centers=centers, window.size=1000, c
 
 #' Get windowed strand-oriented coverages
 #'
+#' Out-of-bound windows will be removed!
 #'
-#' @param windwos a data frame of windows with columns 'chr', 'start', 'end', 'strand'
+#' @param windows a data frame of windows with columns 'chr', 'start', 'end', 'strand'
 #' @param coverage a coverage object (\code{\link[IRanges]{RleList}} as returned by \code{\link[IRanges]{coverage}})
 #'
 #' @return a matrix
 #'
-#' @examples
-#' coverageWindowsCenteredStranded()
-#'
 #' @export
-## windows has columns chr start end strand
 coverageWindowsStranded <- function(windows,  coverage) {
 
   #  cl <- makeCluster(getOption("cl.cores", 8))
