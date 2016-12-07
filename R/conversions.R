@@ -21,13 +21,13 @@ bam2coverage <- function(file.id, type=c("SINGLE","PAIRED"), fragment.length=200
   }
 
     srbam2cov <- function(bam.file, extend=150, chr.flt=NA) {
-    gr <- readGAlignments(bam.file)
+    gr <- ShortRead::readGAlignments(bam.file)
     if (!is.na(chr.flt) & length(chr.flt)!=0) {
       gr <- keepSeqlevels(gr, chr.flt)
     }
     grs <- as(gr, "GRanges")
-    grsr <- resize(grs, extend)
-    covs <- coverage(grsr)
+    grsr <- GRanges::resize(grs, extend)
+    covs <- GRanges::coverage(grsr)
     return(covs)
   }
 

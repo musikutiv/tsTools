@@ -55,10 +55,11 @@ ocampo <-
     rownames(windows) <- rownames(references)
 
     mat <- coverageWindowsStranded(windows, coverage)
+
     res <-
-      mclapply(1:nrow(mat) , mc.cores = mc.cores , function(ridx) {
+      parallel::mclapply(1:nrow(mat) , mc.cores = mc.cores , function(ridx) {
         rx <- mat[ridx, ]
-        x <- rollmean(rx, smoothingWindow)
+        x <- zoo::rollmean(rx, smoothingWindow)
         bestR <- 0
         spacingV <- NA
         shiftV <- NA

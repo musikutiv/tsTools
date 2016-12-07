@@ -19,29 +19,23 @@ bed2dyad <- function(file.id, type=c("SINGLE","PAIRED"), width=1) {
     stop("library 'data.table' is needed for this function to work. Please install it.",
          call. = FALSE)
   }
-  if (with.wig) {
-    if (!requireNamespace("rtracklayer", quietly = TRUE)) {
-      stop("library 'rtracklayer' is needed for wig export to work. Please install it.",
-           call. = FALSE)
-    }
-  }
 
   options(scipen=999)
   shift=73
 
-  bed <- data.frame(fread(file.id))
+  bed <- data.frame(data.table::fread(file.id, showProgress = T))
 
   if (type=="SINGLE") {
-    bedR <- GRanges(bed[,1], IRanges(bed[,2], bed[,3]), strand=bed[,4])
-    dyads <- resize(bedR, width)
+    bedR <- GenomicRanges::GRanges(bed[,1], IRanges::IRanges(bed[,2], bed[,3]), strand=bed[,4])
+    dyads <- GenomicRanges::esize(bedR, width)
     amount <- strand(dyads)
     runValue(amount) <- ifelse(runValue(amount) == "-", -shift, shift)
     dyads <- GenomicRanges::shift(dyads, as.vector(amount))
   } else {
-    bedR <- GRanges(bed[,1], IRanges(bed[,2], bed[,3]))
-    dyads <- resize(bedR, width, fix="center")
+    bedR <- GenomicRanges::GRanges(bed[,1], IRanges::IRanges(bed[,2], bed[,3]))
+    dyads <- GenomicRanges::resize(bedR, width, fix="center")
   }
-  cov <- coverage(dyads)
+  cov <- GenomicRanges::coverage(dyads)
   cov
 }
 
@@ -107,7 +101,7 @@ plotRasterHeatmap <- function(mat) {
   }
 
   range <- c(quantile(mat, 0.01, na.rm=T),quantile(mat, 0.99, na.rm=T))
-  grid.newpage()
-  grid.raster(convertToColors(mat, range), height=unit(0.8, "npc"), width=unit(0.8, "npc"), interpolate = T)
+  grid::grid.newpage()
+  grid::grid.raster(convertToColors(mat, range), height=unit(0.8, "npc"), width=unit(0.8, "npc"), interpolate = T)
 }
 

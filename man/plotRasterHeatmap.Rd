@@ -7,7 +7,7 @@
 plotRasterHeatmap(mat)
 }
 \arguments{
-\item{mat}{}
+\item{mat}{the matrix to be visualized}
 }
 \description{
 Plot Raster Heatmap of matrix

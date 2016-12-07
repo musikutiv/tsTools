@@ -1,58 +1,117 @@
 ---
 title: "Working with nucleosome-derived data (MNase-Seq)"
-author: "Vignette Author"
+author: "Tobias Straub"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteIndexEntry{Working with nucleosome-derived data (MNase-Seq)}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 
-Vignettes are long form documentation commonly included in packages. Because they are part of the distribution of the package, they need to be as compact as possible. The `html_vignette` output type provides a custom style sheet (and tweaks some options) to ensure that the resulting html is as small as possible. The `html_vignette` format:
+- Alignement of reads
+- Generation of coverage objects
+- 
 
-- Never uses retina figures
-- Has a smaller default figure size
-- Uses a custom CSS stylesheet instead of the default Twitter Bootstrap style
+## Alignment of MNaseSeq-Data
 
-## Vignette Info
+Paired-end data is aligned as follows using bowtie2.
 
-Note the various macros within the `vignette` section of the metadata block above. These are required in order to instruct R how to build the vignette. Note that you should change the `title` field and the `\VignetteIndexEntry` to match the title of your vignette.
+- only concordant reads are reported
+- maximum insert size is kept to 250 (a bit larger than nucleosomes)
+- multiple matches of to the genome are suppressed, orphaned mates are eliminated
+- BAM file is then converted to BED in which chr, start, end of the sequenced fragement is reported
 
-## Styles
+Cleaning up of orphaned reads is performed with this script taken from (https://www.biostars.org/p/95929/)
+```{python, eval = FALSE}
+#!/usr/bin/env python
+import csv
+import sys
 
-The `html_vignette` template includes a basic CSS theme. To override this theme you can specify your own CSS in the document metadata as follows:
+f = csv.reader(sys.stdin, dialect="excel-tab")
+of = csv.writer(sys.stdout, dialect="excel-tab")
+last_read = None
+for line in f :
+    #take care of the header
+    if(line[0][0] == "@") :
+        of.writerow(line)
+        continue
 
-    output: 
-      rmarkdown::html_vignette:
-        css: mystyles.css
+    if(last_read == None) : 
+        last_read = line
+    else :
+        if(last_read[0] == line[0]) :
+            of.writerow(last_read)
+            of.writerow(line)
+            last_read = None
+        else :
+            last_read = line
 
-## Figures
-
-The figure sizes have been customised so that you can easily put two images side-by-side. 
-
-```{r, fig.show='hold'}
-plot(1:10)
-plot(10:1)
 ```
 
-You can enable figure captions by `fig_caption: yes` in YAML:
-
-    output:
-      rmarkdown::html_vignette:
-        fig_caption: yes
-
-Then you can use the chunk option `fig.cap = "Your figure caption."` in **knitr**.
-
-## More Examples
-
-You can write math expressions, e.g. $Y = X\beta + \epsilon$, footnotes^[A footnote here.], and tables, e.g. using `knitr::kable()`.
-
-```{r, echo=FALSE, results='asis'}
-knitr::kable(head(mtcars, 10))
+```{bash, eval=FALSE}
+BOWTIE_INDEX= <dir>/Bowtie2Index/genome
+BOWTIE_OPTS="-p 10 -X 250 --no-discordant --no-mixed --no-unal"
+bowtie2 $BOWTIE_OPTS -x $BOWTIE_INDEX -1 mate_1.fastq.gz -2 mate_2.fastq.gz > aligned.sam
+samtools view -hf 0x2 aligned.sam | grep -v "XS:i:" | filter_orphans.py | samtools view -b -o aligned.bam
+samtools sort -n -m 1G -@ 8 -o aligned.s.bam aligned.bam
+bamToBed -i aligned.s.bam -bedpe > aligned.bed 2>/dev/null
+cut -f 1,2,6 aligned.bed > aligned.s.bed
 ```
 
-Also a quote using `>`:
+Single-read data is aligned as follows using bowtie2.
 
-> "He who gives up [code] safety for [code] speed deserves neither."
-([via](https://twitter.com/hadleywickham/status/504368538874703872))
+- multiple matches of to the genome are suppressed
+- BAM file is then converted to BED in which chr, start, end and strand of the read is reported
+
+```{bash, eval = FALSE}
+BOWTIE_INDEX= <dir>/Bowtie2Index/genome
+BOWTIE_OPTS="-p 10 --no-unal"
+bowtie2 $bowtie_opts -x $BOWTIE_INDEX ${SRUN}.fastq.gz > aligned.sam
+samtools view -h aligned.sam | grep -v "XS:i:" | samtools view -b -o aligned.bam
+samtools sort -m 1G -@ 8 -o aligned.s.bam aligned.bam
+bamToBed -i aligned.s.bam > aligned.bed 2>/dev/null
+cut -f 1,2,3,6 aligned.bed > aligned.s.bed
+```
+
+## Conversion to coverage object
+
+```{r}
+library(tsTools)
+library(IRanges)
+fpath <- system.file("extdata", "SRR2154281_IV.s.bed", package="tsTools")
+cov <- bed2dyad(fpath,"PAIRED",1)
+```
+
+## Cumulative Plots
+
+```{r}
+data(ann)
+head(ann)
+ann <- ann[ann$chr=="IV",]
+centers <- data.frame(chr=ann$chr, 
+                      center=ifelse(ann$strand=="+", ann$start, ann$end), 
+                      strand=ann$strand)
+rownames(centers) <- rownames(ann)
+mat <- coverageWindowsCenteredStranded(centers, window.size=2000, cov)
+x <- seq(-1000,1000)
+plot(x, apply(mat, 2, mean), type="l", 
+     xlab="position relative to center position", ylab="dyad density")
+```
+
+row-wise normalization
+
+```{r}
+mat <- norm.square(mat)
+plot(x, apply(mat, 2, mean), type="l", 
+     xlab="position relative to center position", ylab="dyad density (normalized)")
+```
+
+
+## Heatmaps
+
+```{r}
+library(grid)
+plotRasterHeatmap(mat)
+```
+

@@ -14,10 +14,10 @@ coverageWindowsCenteredStranded <- function(centers, window.size=1000, coverage)
 
   centers <- centers[centers$chr %in% names(coverage),]
 
-  result <- sapply(names(coverage), function(x) {
+  result <- lapply(names(coverage), function(x) {
     my.cov <- coverage[[x]]
     my.centers <- centers[centers$chr==x,]
-    mw.views <- Views(my.cov, start=my.centers$center-ceiling(window.size/2), width=window.size+1)
+    mw.views <- IRanges::Views(my.cov, start=my.centers$center-ceiling(window.size/2), width=window.size+1)
     ## remove out-of bounds views
     flt <- start(mw.views)>0 & end(mw.views) < length(my.cov)
     mw.views <- mw.views[flt,]
@@ -31,6 +31,7 @@ coverageWindowsCenteredStranded <- function(centers, window.size=1000, coverage)
       return(NULL)
     }
   })
+
   mat <- Reduce(rbind, result)
   centers <- centers[rownames(centers) %in% rownames(mat),]
   match(rownames(centers), rownames(mat)) -> o
@@ -58,10 +59,10 @@ coverageWindowsStranded <- function(windows,  coverage) {
   windows <- windows[windows$chr %in% names(coverage),]
 
   #  result <- parSapply(cl, names(cov), function(x) {
-  result <- sapply(names(coverage), function(x) {
+  result <- lapply(names(coverage), function(x) {
     my.cov <- coverage[[x]]
     my.windows <- windows[windows$chr==x,]
-    mw.views <- Views(my.cov, start=my.windows$start, my.windows$end)
+    mw.views <- IRanges::Views(my.cov, start=my.windows$start, my.windows$end)
     ## remove out-of bounds views
     flt <- start(mw.views)>0 & end(mw.views) < length(my.cov)
     mw.views <- mw.views[flt,]
