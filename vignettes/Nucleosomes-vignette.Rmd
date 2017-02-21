@@ -9,10 +9,6 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-- Alignement of reads
-- Generation of coverage objects
-- 
-
 ## Alignment of MNaseSeq-Data
 
 Paired-end data is aligned as follows using bowtie2.
@@ -81,9 +77,21 @@ library(tsTools)
 library(IRanges)
 ```
 
+As an example we load the data included in the package (S. cerevisiae MNase-Seq, subset to chromosome IV)
+
 ```{r}
 fpath <- system.file("extdata", "SRR2154281_IV.s.bed", package="tsTools")
 cov <- bed2dyad(fpath,"PAIRED",1)
+
+```
+
+## Autocorrelation Function 
+
+The autocorrelation function on the signal vector can provide a hint as to whether we have something nucleosomal in the data. Given the beads on a string arrangement of nucleosomes we expect a periodic autocorrelation pattern. 
+
+```{r}
+
+acf(as.vector(cov[['IV']]), lag.max = 1000)
 
 ```
 
