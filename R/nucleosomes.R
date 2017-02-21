@@ -71,11 +71,12 @@ bin.matrix <- function(m, bin.size) {
 #'
 #' @export
 bin.matrix.rows <- function(m, bin.size) {
-  splitv <- rep(1:round((ncol(m)/bin.size)), each=5)
+  splitv <- rep(1:round((ncol(m)/bin.size)), each=bin.size)
   splitv <- append(splitv, rep(NA,ncol(m)-length(splitv)))
   bmat <- t(apply(m,1, function(x) {unlist(lapply(split(x,splitv), mean))}))
   cnames <- round(unlist(lapply(split(as.integer(colnames(m)), splitv),median)))
   colnames(bmat) <- cnames
+  bmat
 }
 
 #' Row-wise sum of squares normalization of a matrix
@@ -87,6 +88,25 @@ bin.matrix.rows <- function(m, bin.size) {
 #' @export
 norm.square <- function(mat) {t(apply(mat, 1, function(x){x/sqrt(sum(x^2))}))}
 
+#' Row-wise sum of row normalization of a matrix
+#'
+#' @param mat a matrix
+#'
+#' @return a matrix of normalized values
+#'
+#' @export
+norm.sum <- function(mat) {t(apply(mat, 1, function(x){x/sum(x)}))}
+
+#' Row-wise mean scaling
+#'
+#' @param mat a matrix
+#'
+#' @return a matrix of mean-scaled values
+#'
+#' @export
+meanScale <- function(mat) {
+  t(apply(mat, 1, function(x){x-mean(x)}))
+}
 
 #' Plot Raster Heatmap of matrix
 #'

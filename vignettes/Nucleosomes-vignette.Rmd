@@ -76,12 +76,17 @@ cut -f 1,2,3,6 aligned.bed > aligned.s.bed
 
 ## Conversion to coverage object
 
-```{r}
+```{r, message=F}
 library(tsTools)
 library(IRanges)
+```
+
+```{r}
 fpath <- system.file("extdata", "SRR2154281_IV.s.bed", package="tsTools")
 cov <- bed2dyad(fpath,"PAIRED",1)
+
 ```
+
 
 ## Cumulative Plots
 
@@ -102,9 +107,27 @@ plot(x, apply(mat, 2, mean), type="l",
 row-wise normalization
 
 ```{r}
-mat <- norm.square(mat)
-plot(x, apply(mat, 2, mean), type="l", 
-     xlab="position relative to center position", ylab="dyad density (normalized)")
+mat.sq <- norm.square(mat)
+mat.sum <- norm.sum(mat)
+
+par(mfrow=c(1,2))
+plot(x, apply(mat.sq, 2, mean), type="l", 
+     xlab="position relative to center position", ylab="dyad density (normalized)", main="sum of squares normalization")
+plot(x, apply(mat.sum, 2, mean), type="l", 
+     xlab="position relative to center position", ylab="dyad density (normalized)", main="sum of row normalization")
+```
+
+```{r}
+mat.bin <- bin.matrix.rows(mat.sum,25)
+x <- as.integer(colnames(mat.bin))
+plot(x, apply(mat.bin, 2, mean), type="l", 
+     xlab="position relative to center position", ylab="dyad density (normalized)", main="binned")
+library(zoo)
+mat.bin.smoothed <- t(apply(mat.bin, 1, function(x) {zoo::rollmean(x, 9)}))
+x <- as.integer(colnames(mat.bin.smoothed))
+plot(x, apply(mat.bin.smoothed, 2, mean), type="l", 
+     xlab="position relative to center position", ylab="dyad density (normalized)", main="binned & smoothed")
+
 ```
 
 
@@ -112,6 +135,7 @@ plot(x, apply(mat, 2, mean), type="l",
 
 ```{r}
 library(grid)
-plotRasterHeatmap(mat)
+hmat <- meanScale(mat)
+plotRasterHeatmap(hmat)
 ```
 
