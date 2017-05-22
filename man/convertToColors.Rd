@@ -17,4 +17,3 @@ a matrix of colors
 \description{
 Useful for plotting heatmaps
 }
-

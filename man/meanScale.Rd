@@ -15,4 +15,3 @@ a matrix of mean-scaled values
 \description{
 Row-wise mean scaling
 }
-

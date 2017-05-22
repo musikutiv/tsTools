@@ -17,4 +17,3 @@ a matrix of binned rowws
 \description{
 Bin a matrix column-wise per row
 }
-

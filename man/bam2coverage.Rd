@@ -23,4 +23,3 @@ a coverage object (\code{\link[IRanges]{RleList}} as returned by \code{\link[IRa
 Reads can optionally be filtered by a chromosome inclusion list
 Single reads will be extended to the provided fragment length
 }
-

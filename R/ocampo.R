@@ -1,5 +1,6 @@
-
-
+#' Get ocampo paramters per instance
+#'
+#' @export
 
 ocampo <-
   function(coverage = coverage,

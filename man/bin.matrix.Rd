@@ -17,4 +17,3 @@ a vector of binned values
 \description{
 Bin a matrix column-wise and average the bins across rows
 }
-

@@ -15,4 +15,3 @@ a matrix of normalized values
 \description{
 Row-wise sum of squares normalization of a matrix
 }
-

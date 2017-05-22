@@ -12,4 +12,3 @@ plotRasterHeatmap(mat)
 \description{
 Plot Raster Heatmap of matrix
 }
-

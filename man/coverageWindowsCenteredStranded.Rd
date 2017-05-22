@@ -19,4 +19,3 @@ a matrix
 \description{
 Out-of-bound windows will be removed!
 }
-

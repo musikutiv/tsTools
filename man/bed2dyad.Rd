@@ -24,4 +24,3 @@ For paired reads the fragment mid points will be considered dyad position
 the bed files for SINGLE should have columns 1) chromosome 2) start 3) end 4) strand
 the bed files for PAIRED should have columns 1) chromosome 2) start 3) end
 }
-
