@@ -8,6 +8,30 @@ ocampo(coverage = coverage, references = references, beforeRef = 200,
   afterRef = 1000, smoothingWindow = 100, spacing.low = 130,
   spacing.high = 220, shift.low = -70, shift.high = 60, mc.cores = 2)
 }
+\arguments{
+\item{coverage}{a coverage object (\code{\link[IRanges]{RleList}} as returned by \code{\link[IRanges]{coverage}})}
+
+\item{references}{reference regions data frame with columns (chr, start, end). rownames will serve as id for output table}
+
+\item{beforeRef}{bps before reference to take for shift estimation}
+
+\item{afterRef}{bps after reference to take for shift estimation}
+
+\item{smoothingWindow}{size of the smoothing window.}
+
+\item{spacing.low}{minimum spacing allowed}
+
+\item{spacing.high}{maximum spacing allowed}
+
+\item{shift.low}{minimum shift allowed}
+
+\item{shift.high}{maximum shift allowed}
+
+\item{spacing.high}{maximum spacing allowed}
+}
+\value{
+a data frame with columns r (correlation), space, and shift for each reference provided
+}
 \description{
 Get ocampo paramters per instance
 }

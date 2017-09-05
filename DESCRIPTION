@@ -21,6 +21,6 @@ Suggests:
   ShortRead,
   testthat,
   zoo,
-    knitr,
-    rmarkdown
+  knitr,
+  rmarkdown
 VignetteBuilder: knitr

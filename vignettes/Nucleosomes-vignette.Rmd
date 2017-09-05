@@ -72,7 +72,7 @@ cut -f 1,2,3,6 aligned.bed > aligned.s.bed
 
 ## Conversion to coverage object
 
-```{r, message=F}
+```{r, message=F, warning=F}
 library(tsTools)
 library(IRanges)
 ```
@@ -145,5 +145,14 @@ plot(x, apply(mat.bin.smoothed, 2, mean), type="l",
 library(grid)
 hmat <- meanScale(mat)
 plotRasterHeatmap(hmat)
+```
+
+Getting Spacing and Phasing along Reference points
+
+```{r}
+ann[1:10,]
+result <- ocampo(cov, ann[1:10,])
+result
+
 ```
 

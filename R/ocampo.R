@@ -1,5 +1,18 @@
 #' Get ocampo paramters per instance
 #'
+#' @param coverage a coverage object (\code{\link[IRanges]{RleList}} as returned by \code{\link[IRanges]{coverage}})
+#' @param references reference regions data frame with columns (chr, start, end). rownames will serve as id for output table
+#' @param beforeRef bps before reference to take for shift estimation
+#' @param afterRef bps after reference to take for shift estimation
+#' @param smoothingWindow size of the smoothing window.
+#' @param spacing.low minimum spacing allowed
+#' @param spacing.high maximum spacing allowed
+#' @param shift.low minimum shift allowed
+#' @param shift.high maximum shift allowed
+#' @param spacing.high maximum spacing allowed
+#'
+#' @return a data frame with columns r (correlation), space, and shift for each reference provided
+#'
 #' @export
 
 ocampo <-
@@ -91,7 +104,7 @@ ocampo <-
             }
           }
         }
-        c(round(bestR, 2), spacingV, shiftV)
+        c(r=round(bestR, 2), space=spacingV, shift=shiftV)
       })
     df <- t(as.data.frame(res))
     rownames(df) <- rownames(mat)
