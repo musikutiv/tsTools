@@ -138,8 +138,16 @@ plot(x, apply(mat.bin.smoothed, 2, mean), type="l",
 
 ```
 
+Cumulative plot with scatter
 
-## Heatmaps
+```{r}
+cumPlot(mat.sum, base.col = "#FF0000")
+
+```
+
+
+
+Heatmaps
 
 ```{r}
 library(grid)
