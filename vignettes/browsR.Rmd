@@ -1,0 +1,87 @@
+---
+title: "The browsR"
+author: "Tobias Straub"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Genome coverage plots}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+```{r, warning=F, message=F}
+library(tsTools)
+library(TxDb.Dmelanogaster.UCSC.dm6.ensGene)
+library(RColorBrewer)
+require(HilbertVis)
+require(grid)
+require(lattice)
+
+```
+
+
+the function `plotProfiles` takes the following parameters (bold = required)
+
+| name | explanation |
+|------------|---------------------------------------------------------------------------------|
+**fstart** | start of the genomic window (bp)
+**fend** | end of the genomic window (bp)
+**fchr** | chromosome of the genomic window
+**profs** | named list of coverages i.e. list of SimpleRleLists one per profile to be plotted
+cols | colors of the profiles (= vector of length profs)
+ann | a named list dataframe of annotations. Dataframes with colnames chr, start, end, col. The col column specifies color if individual data points
+ylabel | the label of the y axis
+ylims | list of ylimits for plotting the coverages. list(c(min, max), c(min, max))
+txdb | a transcription database used for plotting gene models (TxDb format)
+ftitle | title of the plot
+collapse | collapse gene models (default = TRUE)
+with.genes.highlited | vector of gene ids that should be highlighted
+plot.labels | plot labels for genes (default = TRUE)
+grid | plot grid (default = TRUE)
+with.average | plot average (default = FALSE)
+
+## a simple example, one profile
+
+I load the profile from the packages. For sake of space the profile just consists of one chromosome. Therefore I have to explictly re-create a SimpleRleList object. Typicall a Granges to coverage conversion would yield a SimpleRleList for direct usage.
+
+The genomic annotations are taken from Bioconductors `TxDb.Dmelanogaster.UCSC.dm6.ensGene` library. Alternatively it can be created from GTF or GFF files using `GenomicFeatures` package.
+
+```{r, fig.height=2.5, fig.width=6}
+
+cov <- new("SimpleRleList")
+fpath <- system.file("extdata", "covx.rds", package="tsTools")
+cov[["chrX"]] <- readRDS(fpath)
+
+plotProfiles(fstart=1660000,fend=1720000,fchr="chrX", profs=list(MSL2=cov), cols=c("red"),txdb=TxDb.Dmelanogaster.UCSC.dm6.ensGene)
+
+```
+
+## three profiles
+
+In this example I simply re-use the same profile
+
+```{r, fig.height=3.5, fig.width=6}
+
+cov <- new("SimpleRleList")
+fpath <- system.file("extdata", "covx.rds", package="tsTools")
+cov[["chrX"]] <- readRDS(fpath)
+
+plotProfiles(fstart=1660000,fend=1720000,fchr="chrX", profs=list(MSL2=cov, MSL3=cov, MSL4=cov), cols=brewer.pal(3, "Set1"),txdb=TxDb.Dmelanogaster.UCSC.dm6.ensGene)
+
+```
+
+## adding annotations
+
+```{r, fig.height=2.5, fig.width=6}
+fpath <- system.file("extdata", "msl2.bed", package="tsTools")
+peaks <- read.delim(fpath, header=F)
+peaks[,1] <- paste0("chr", peaks[,1])
+
+ann <- list("MSL2 peaks"=data.frame(chr=peaks[,1], start=peaks[,2], end=peaks[,3], col=c("blue")))
+
+plotProfiles(fstart=1660000,fend=1720000,fchr="chrX", profs=list(MSL2=cov), cols=c("red"),txdb=TxDb.Dmelanogaster.UCSC.dm6.ensGene, ann=ann)
+```
+
+```{r}
+sessionInfo()
+```
+

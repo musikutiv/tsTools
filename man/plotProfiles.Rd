@@ -4,8 +4,8 @@
 \alias{plotProfiles}
 \title{Plot coverages along genome}
 \usage{
-plotProfiles(fstart, fend, fchr, profs, cols = c(), ylabel = "coverage",
-  ylims = list(), txdb, ftitle = NA, collapse = T,
+plotProfiles(fstart, fend, fchr, profs, cols = c(), ann = NULL,
+  ylabel = "coverage", ylims = list(), txdb, ftitle = NA, collapse = T,
   with.genes.highlited = c(), plot.labels = T, grid = F,
   with.average = F)
 }
@@ -20,9 +20,9 @@ plotProfiles(fstart, fend, fchr, profs, cols = c(), ylabel = "coverage",
 
 \item{cols}{colors of the profiles}
 
-\item{ylims}{list of ylimits for plotting the coverages. list(c(min, max), c(min, max))}
+\item{ann}{a dataframe of annotations}
 
-\item{txdb}{a transcription database used for plotting gene models}
+\item{ylims}{list of ylimits for plotting the coverages. list(c(min, max), c(min, max))}
 
 \item{ftitle}{title of the plot}
 
@@ -37,6 +37,8 @@ plotProfiles(fstart, fend, fchr, profs, cols = c(), ylabel = "coverage",
 \item{with.average}{plot average (default = FALSE)}
 
 \item{ylable}{the label of the y axis}
+
+\item{plotProfiles(10000, 20000, "X", }{list(MSL2=cov), txdb=txdb)   a transcription database used for plotting gene models}
 }
 \description{
 Plot coverages along genome
