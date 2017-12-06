@@ -7,9 +7,10 @@
 #' @param fchr   chromosome of the genomic window
 #' @param profs  list of coverages to be plotted
 #' @param cols colors of the profiles
+#' @param ann a dataframe of annotations
 #' @param ylable the label of the y axis
 #' @param ylims list of ylimits for plotting the coverages. list(c(min, max), c(min, max))
-#' @param txdb   a transcription database used for plotting gene models
+#' @param plotProfiles(10000,20000,"X", list(MSL2=cov), txdb=txdb)   a transcription database used for plotting gene models
 #' @param ftitle title of the plot
 #' @param collapse collapse gene models (default = TRUE)
 #' @param with.genes.highlited vector of gene ids that should be highlighted
@@ -20,26 +21,17 @@
 #' @export
 
 plotProfiles <-
-  function(fstart,
-           fend,
-           fchr,
-           profs,
-           cols = c(),
-           ylabel = "coverage",
-           ylims = list(),
-           txdb,
-           ftitle = NA,
-           collapse = T,
-           with.genes.highlited = c(),
-           plot.labels = T,
-           grid = F,
-           with.average = F) {
+  function(fstart, fend, fchr, profs, cols = c(), ann=NULL, ylabel = "coverage", ylims = list(), txdb, ftitle = NA,
+           collapse = T, with.genes.highlited = c(), plot.labels = T, grid = F, with.average = F) {
 
     require(grid)
     require(IRanges)
     require(HilbertVis)
     options(scipen = 100)
 
+
+    ########################################################################################################################################################################################################
+    # FUNCTION DEFINITIONS
     ########################################################################################################################################################################################################
     profile.xscale <- function(xscale) {
       #grid.rect(gp = gpar(col = "grey"))
@@ -86,7 +78,6 @@ plotProfiles <-
       #grid.xaxis(name="scale", gp=gpar(cex=0.5))
 
     }
-
     bg.grid <- function(xscale) {
       main.ticks <- grid.pretty(xscale)
       dist.main <- main.ticks[2] - main.ticks[1]
@@ -115,7 +106,6 @@ plotProfiles <-
         )
       }
     }
-
     gff.get.parent <- function(x) {
       rx <- regexpr("Parent=([^;]*)", text = x, perl = T)
       substring(
@@ -127,34 +117,24 @@ plotProfiles <-
       #	if (is.na(res)) {res<-""}
       #	res
     }
-
-    ts.grid.rect <-
-      function(start,
-               end,
-               bottom,
-               top,
-               col = 1,
-               lcol = 1,
-               lwd = 1) {
-        grid.rect(
-          x = start,
-          y = bottom,
-          width = end - start,
-          height = top - bottom,
-          just = c("left", "bottom"),
-          default.units = "native",
-          gp = gpar(
-            fill = col,
-            col = lcol,
-            lwd = lwd
-          )
+    ts.grid.rect <- function(start, end,  bottom, top, col = 1, lcol = 1, lwd = 1) {
+      grid.rect(
+        x = start,
+        y = bottom,
+        width = end - start,
+        height = top - bottom,
+        just = c("left", "bottom"),
+        default.units = "native",
+        gp = gpar(
+          fill = col,
+          col = lcol,
+          lwd = lwd
         )
-      }
-
+      )
+    }
     filter.longest.txt <- function(txts) {
       txts[which.max(width(txts))]
     }
-
     plot.points <- function(layout.frame, profile.frame, col = 1) {
       grid.points(
         layout.frame$pos,
@@ -163,294 +143,305 @@ plotProfiles <-
         gp = gpar(col = col, cex = 0.1)
       )
     }
-
-    plot.bars <-
-      function(design.frame,
-               profile.frame,
-               fcol = 1,
-               bcol = 0) {
-        for (i in 1:nrow(design.frame)) {
-          grid.rect(
-            x = design.frame$pos[i],
-            y = 0,
-            width = design.frame$length[i],
-            height = profile.frame[i],
-            just = c("left", "bottom"),
-            default.units = "native",
-            gp = gpar(fill = bcol, col = fcol)
-          )
-        }
+    plot.bars <- function(design.frame, profile.frame, fcol = 1, bcol = 0) {
+      for (i in 1:nrow(design.frame)) {
+        grid.rect(
+          x = design.frame$pos[i],
+          y = 0,
+          width = design.frame$length[i],
+          height = profile.frame[i],
+          just = c("left", "bottom"),
+          default.units = "native",
+          gp = gpar(fill = bcol, col = fcol)
+        )
       }
-
-    plot.bars2 <-
-      function(design.frame,
-               profile.frame,
-               y.min,
-               fcol = 1,
-               bcol = 0) {
-        for (i in 1:nrow(design.frame)) {
-          grid.rect(
-            x = design.frame$pos[i],
-            y = y.min,
-            width = design.frame$length[i],
-            height = profile.frame[i] - y.min,
-            just = c("left", "bottom"),
-            default.units = "native",
-            gp = gpar(fill = bcol, col = fcol)
-          )
-        }
+    }
+    plot.bars2 <- function(design.frame, profile.frame, y.min, fcol = 1, bcol = 0) {
+      for (i in 1:nrow(design.frame)) {
+        grid.rect(
+          x = design.frame$pos[i],
+          y = y.min,
+          width = design.frame$length[i],
+          height = profile.frame[i] - y.min,
+          just = c("left", "bottom"),
+          default.units = "native",
+          gp = gpar(fill = bcol, col = fcol)
+        )
       }
-
+    }
     averageWindow <- function(pos, design, profile, window.size = 500) {
       window <-
         design$pos + design$length >= pos - window.size &
         design$pos <= pos + window.size
       median(profile[window])
     }
-
-    plot.genes <-
-      function(vp,
-               strand,
-               frame.genes,
-               bumps,
-               gene.height,
-               label.shift,
-               collapse,
-               with.genes.highlited = c(),
-               plot.labels) {
-        #browser()
-        exon <- 2.0
-        gene.frame <- frame.genes[strand(frame.genes) == strand]
-        pushViewport(vp)
-        #grid.rect(gp = gpar(col = "grey"))
-        if (length(gene.frame) > 0) {
-          for (i in 1:length(gene.frame)) {
-            txts.names <-
-              suppressMessages(select(
-                txdb,
-                keys = names(gene.frame)[i],
-                columns = "TXNAME",
-                keytype = "GENEID"
-              )$TXNAME)
-            txts <- transcripts(txdb, filter = list(tx_name = txts.names))
-            if (length(txts) > 0) {
-              if (collapse) {
-                filter.longest.txt <- function(txts) {
-                  txts[which.max(width(txts))]
-                }
-
-                txts <- filter.longest.txt(txts)
+    plot.genes <- function(vp, strand, frame.genes, bumps, gene.height, label.shift,
+                           collapse,  with.genes.highlited = c(), plot.labels) {
+      #browser()
+      exon <- 2.0
+      gene.frame <- frame.genes[strand(frame.genes) == strand]
+      pushViewport(vp)
+      #grid.rect(gp = gpar(col = "grey"))
+      if (length(gene.frame) > 0) {
+        for (i in 1:length(gene.frame)) {
+          txts.names <-
+            suppressMessages(select(
+              txdb,
+              keys = names(gene.frame)[i],
+              columns = "TXNAME",
+              keytype = "GENEID"
+            )$TXNAME)
+          txts <- transcripts(txdb, filter = list(tx_name = txts.names))
+          if (length(txts) > 0) {
+            if (collapse) {
+              filter.longest.txt <- function(txts) {
+                txts[which.max(width(txts))]
               }
-              for (k in 1:length(txts)) {
-                gene.id <-
-                  suppressMessages(
-                    select(
-                      txdb,
-                      keys = elementMetadata(txts[, 2])[k, 1],
-                      columns = "GENEID",
-                      keytype = "TXNAME"
-                    )$GENEID
+
+              txts <- filter.longest.txt(txts)
+            }
+            for (k in 1:length(txts)) {
+              gene.id <-
+                suppressMessages(
+                  select(
+                    txdb,
+                    keys = elementMetadata(txts[, 2])[k, 1],
+                    columns = "GENEID",
+                    keytype = "TXNAME"
+                  )$GENEID
+                )
+              col <-
+                ifelse(gene.id %in% with.genes.highlited,
+                       "#FFAAAA",
+                       "#F2F2F2")
+              lcol <-
+                ifelse(gene.id %in% with.genes.highlited,
+                       "#FF0000",
+                       "#000000")
+
+              if (strand == "-") {
+                t1  <-
+                  (bumps * 10) - ((k - 1) * gene.height + gene.height / 2 - label.shift /
+                                    2)
+              }  else {
+                t1  <- ((k - 1) * gene.height + gene.height / 2) - (label.shift / 2)
+              } #fw
+              ts.grid.rect(start(txts[k]),
+                           end(txts[k]),
+                           t1,
+                           t1,
+                           lcol = lcol,
+                           lwd = 2)
+
+              exons <-
+                exons(txdb, filter = list(tx_name = elementMetadata(txts[, 2])[1, 1]))
+
+              if (length(exons) > 0) {
+                for (l in 1:length(exons)) {
+                  ts.grid.rect(
+                    start(exons[l]),
+                    end(exons[l]),
+                    t1 - exon,
+                    t1 + exon,
+                    col = col,
+                    lcol = lcol,
+                    lwd = 1
                   )
-                col <-
-                  ifelse(gene.id %in% with.genes.highlited,
-                         "#FFAAAA",
-                         "#F2F2F2")
-                lcol <-
-                  ifelse(gene.id %in% with.genes.highlited,
-                         "#FF0000",
-                         "#000000")
-
-                if (strand == "-") {
-                  t1  <-
-                    (bumps * 10) - ((k - 1) * gene.height + gene.height / 2 - label.shift /
-                                      2)
-                }  else {
-                  t1  <- ((k - 1) * gene.height + gene.height / 2) - (label.shift / 2)
-                } #fw
-                ts.grid.rect(start(txts[k]),
-                             end(txts[k]),
-                             t1,
-                             t1,
-                             lcol = lcol,
-                             lwd = 2)
-
-                exons <-
-                  exons(txdb, filter = list(tx_name = elementMetadata(txts[, 2])[1, 1]))
-
-                if (length(exons) > 0) {
-                  for (l in 1:length(exons)) {
-                    ts.grid.rect(
-                      start(exons[l]),
-                      end(exons[l]),
-                      t1 - exon,
-                      t1 + exon,
-                      col = col,
-                      lcol = lcol,
-                      lwd = 1
-                    )
-                  }
                 }
-                if (plot.labels) {
-                  label <- gene.id
-                  if (strand == "-") {
-                    grid.text(
-                      label,
-                      end(txts)[k],
-                      t1 - label.shift - 0.5,
-                      default.units = "native",
-                      just = c("right", "bottom"),
-                      gp = gpar(cex = 0.5)
-                    )
-                  }
-                  else {
-                    grid.text(
-                      label,
-                      end(txts)[k],
-                      t1 + label.shift + 0.4,
-                      default.units = "native",
-                      just = c("right", "top"),
-                      gp = gpar(cex = 0.5)
-                    )
-                  }
+              }
+              if (plot.labels) {
+                label <- gene.id
+                if (strand == "-") {
+                  grid.text(
+                    label,
+                    end(txts)[k],
+                    t1 - label.shift - 0.5,
+                    default.units = "native",
+                    just = c("right", "bottom"),
+                    gp = gpar(cex = 0.5)
+                  )
+                }
+                else {
+                  grid.text(
+                    label,
+                    end(txts)[k],
+                    t1 + label.shift + 0.4,
+                    default.units = "native",
+                    just = c("right", "top"),
+                    gp = gpar(cex = 0.5)
+                  )
                 }
               }
             }
           }
         }
-        popViewport()
+      }
+      popViewport()
+    }
+    plot.profiles <- function(profs, fchr, fstart, fend, ylims, cols,
+                              xscale, with.average = F) {
+      vsize <- as.integer(dev.size()[1] * 150)
+
+      #margins <- unit(0.04, "npc")
+      margins <- unit(0.19, "lines")
+      font.size.label <- 0.7
+      panel.background <- "#cccccc25"
+
+      if (length(cols) == 0) {
+        require(RColorBrewer)
+        cols <-
+          brewer.pal((ifelse(length(profs) > 2, length(profs), 3)) , "Dark2")
       }
 
-    plot.profiles <-
-      function(profs,
-               fchr,
-               fstart,
-               fend,
-               ylims,
-               cols,
-               xscale,
-               with.average = F) {
-        vsize <- as.integer(dev.size()[1] * 150)
+      for (i in 1:length(profs)) {
+        if (class(profs[[i]]) == "SimpleRleList") {
+          #			framel <- window(profs[[i]][[fchr]], start= fstart,end= fend)
+          #			xl <- c(0,start(framel),max(end(framel))) + fstart
+          #			yl <- c(0,runValue(framel),0)
 
-        #margins <- unit(0.04, "npc")
-        margins <- unit(0.19, "lines")
-        font.size.label <- 0.7
-        panel.background <- "#cccccc25"
+          xl <- c(fstart, seq(fstart, fend, length.out = vsize), fend)
+          yl <-
+            c(0, shrinkVector(as.vector(profs[[i]][[fchr]])[fstart:fend], newLength =
+                                vsize), 0)
+          yl[is.na(yl)] <- 0
+          #browser()
+          if (length(ylims) == 0) {
+            vmax <-
+              max(pretty(0:ceiling(max(
+                yl, na.rm = T
+              ))))
+          } else {
+            vmax <- ylims[[i]][2]
+          }
 
-        if (length(cols) == 0) {
-          require(RColorBrewer)
-          cols <-
-            brewer.pal((ifelse(length(profs) > 2, length(profs), 3)) , "Dark2")
+          #clipped
+          prof1 <-
+            viewport(
+              x = 0,
+              y = unit((length(profs) - i) * 1 / length(profs), "npc") + 2 * margins,
+              w = 1,
+              h = unit(1 / length(profs), "npc") - 2 * margins,
+              just = c("left", "bottom"),
+              xscale = xscale,
+              yscale = c(0, vmax),
+              clip = "on"
+            )
+          pushViewport(prof1)
+          grid.rect(gp = gpar(fill = panel.background, lty = 0))
+          #grid.yaxis(gp=gpar(cex=0.5))
+          #grid.lines(xscale, 0, default.units="native",gp=gpar(col="grey66", lwd=0.5))
+          #grid.polygon(x=xl, y=yl,default.units="native",gp=gpar(col="#33333370", fill=paste(cols[[i]],"95", sep="")))
+          grid.lines(xscale,
+                     0,
+                     default.units = "native",
+                     gp = gpar(col = "grey66", lwd = 0.5))
+          grid.polygon(
+            x = xl,
+            y = yl,
+            default.units = "native",
+            gp = gpar(
+              col = "#55555570",
+              lwd = 0.5,
+              fill = NA
+            )
+          )
+          grid.polygon(
+            x = xl,
+            y = yl,
+            default.units = "native",
+            gp = gpar(col = NA, fill = cols[[i]])
+          )
+          grid.text(
+            names(profs)[[i]],
+            unit(0.4, "lines"),
+            unit(1, "npc") - unit(0.3, "lines"),
+            just = c("left", "top"),
+            gp = gpar(cex = font.size.label, font = 1)
+          )
+          popViewport()
+
+          ##unclipped
+          prof1 <-
+            viewport(
+              x = 0,
+              y = unit((length(profs) - i) * 1 / length(profs), "npc") + 2 * margins,
+              w = 1,
+              h = unit(1 / length(profs), "npc") - 2 * margins,
+              just = c("left", "bottom"),
+              xscale = xscale,
+              yscale = c(0, vmax),
+              clip = "off"
+            )
+          pushViewport(prof1)
+          grid.rect(gp = gpar(lwd = 1, fill = NA))
+          popViewport()
+
+          yax <-
+            viewport(
+              x = unit(-0.2, "lines"),
+              y = unit((length(profs) - i) * 1 / length(profs), "npc") + 2 * margins,
+              w = unit(0.2, "lines"),
+              h = unit(1 / length(profs), "npc") - 2 * margins,
+              just = c("left", "bottom"),
+              xscale = xscale,
+              yscale = c(0, vmax),
+              clip = "off"
+            )
+          pushViewport(yax)
+          #			at <- pretty(seq(0, floor(vmax)), n=5)[c(1,3,5)]
+          grid.yaxis(gp = gpar(cex = 0.45))#, at=at)
+          #grid.text("label", unit(-2.5, "lines") , 0.5, just="center", rot=90, gp=gpar(cex=font.size.label, font=2))
+          popViewport()
+
+
         }
+      }
 
-        for (i in 1:length(profs)) {
-          if (class(profs[[i]]) == "SimpleRleList") {
-            #			framel <- window(profs[[i]][[fchr]], start= fstart,end= fend)
-            #			xl <- c(0,start(framel),max(end(framel))) + fstart
-            #			yl <- c(0,runValue(framel),0)
+    }
+    plot.annotation <- function(ann, fchr, fstart, fend, xscale) {
 
-            xl <- c(fstart, seq(fstart, fend, length.out = vsize), fend)
-            yl <-
-              c(0, shrinkVector(as.vector(profs[[i]][[fchr]])[fstart:fend], newLength =
-                                  vsize), 0)
-            yl[is.na(yl)] <- 0
-            #browser()
-            if (length(ylims) == 0) {
-              vmax <-
-                max(pretty(0:ceiling(max(
-                  yl, na.rm = T
-                ))))
-            } else {
-              vmax <- ylims[[i]][2]
-            }
+      margins <- unit(0.05, "lines")
+      #grid.rect(gp = gpar(col = "#333333"))
 
-            #clipped
-            prof1 <-
-              viewport(
-                x = 0,
-                y = unit((length(profs) - i) * 1 / length(profs), "npc") + 2 * margins,
-                w = 1,
-                h = unit(1 / length(profs), "npc") - 2 * margins,
-                just = c("left", "bottom"),
-                xscale = xscale,
-                yscale = c(0, vmax),
-                clip = "on"
-              )
-            pushViewport(prof1)
-            grid.rect(gp = gpar(fill = panel.background, lty = 0))
-            #grid.yaxis(gp=gpar(cex=0.5))
-            #grid.lines(xscale, 0, default.units="native",gp=gpar(col="grey66", lwd=0.5))
-            #grid.polygon(x=xl, y=yl,default.units="native",gp=gpar(col="#33333370", fill=paste(cols[[i]],"95", sep="")))
-            grid.lines(xscale,
-                       0,
-                       default.units = "native",
-                       gp = gpar(col = "grey66", lwd = 0.5))
-            grid.polygon(
-              x = xl,
-              y = yl,
-              default.units = "native",
-              gp = gpar(
-                col = "#55555570",
-                lwd = 0.5,
-                fill = NA
-              )
-            )
-            grid.polygon(
-              x = xl,
-              y = yl,
-              default.units = "native",
-              gp = gpar(col = NA, fill = cols[[i]])
-            )
-            grid.text(
-              names(profs)[[i]],
-              unit(0.4, "lines"),
-              unit(1, "npc") - unit(0.3, "lines"),
-              just = c("left", "top"),
-              gp = gpar(cex = font.size.label, font = 1)
-            )
-            popViewport()
+      for (i in 1:length(ann)) {
+        ann1 <- viewport(x = 0, y = unit((length(ann)-i) * 1/length(ann), "npc") + 2*margins,
+                         w = 1, h = unit(1/length(ann), "npc")- 2*margins,
+                         just = c("left", "bottom"), xscale=xscale, clip="on",
+                         yscale=c(0, 1))
+        pushViewport(ann1)
 
-            ##unclipped
-            prof1 <-
-              viewport(
-                x = 0,
-                y = unit((length(profs) - i) * 1 / length(profs), "npc") + 2 * margins,
-                w = 1,
-                h = unit(1 / length(profs), "npc") - 2 * margins,
-                just = c("left", "bottom"),
-                xscale = xscale,
-                yscale = c(0, vmax),
-                clip = "off"
-              )
-            pushViewport(prof1)
-            grid.rect(gp = gpar(lwd = 1, fill = NA))
-            popViewport()
-
-            yax <-
-              viewport(
-                x = unit(-0.2, "lines"),
-                y = unit((length(profs) - i) * 1 / length(profs), "npc") + 2 * margins,
-                w = unit(0.2, "lines"),
-                h = unit(1 / length(profs), "npc") - 2 * margins,
-                just = c("left", "bottom"),
-                xscale = xscale,
-                yscale = c(0, vmax),
-                clip = "off"
-              )
-            pushViewport(yax)
-            #			at <- pretty(seq(0, floor(vmax)), n=5)[c(1,3,5)]
-            grid.yaxis(gp = gpar(cex = 0.45))#, at=at)
-            #grid.text("label", unit(-2.5, "lines") , 0.5, just="center", rot=90, gp=gpar(cex=font.size.label, font=2))
-            popViewport()
-
+        ca <- ann[[i]]
+        ca <- ca[ca$chr==fchr & ca$end>fstart & ca$start<fend,]
+        #browser()
+        if (nrow(ca) > 0) {
+          for (k in 1:nrow(ca)) {
+            ts.grid.rect(ca$start[k], ca$end[k], 0, 1, col=ifelse(is.null(ca$col[k]),1,as.character(ca$col[k])),
+                         lcol=ifelse(is.null(ca$col[k]),1,as.character(ca$col[k])), lwd=1)
+            grid.text(as.character(ca$label[k]), unit(ca$start[k],"native")-unit(0.003,"npc"), unit(0.5, "npc"), just=c("right", "center"), gp=gpar(cex=0.5, font=1))
 
           }
         }
 
+        popViewport()
+
+        ann1 <- viewport(x = 0, y = unit((length(ann)-i) * 1/length(ann), "npc") + 2*margins,
+                         w = 1, h = unit(1/length(ann), "npc")- 2*margins,
+                         just = c("left", "bottom"), xscale=xscale, clip="off",
+                         yscale=c(0, 1))
+        pushViewport(ann1)
+        grid.text(names(ann)[i], unit(-0.01, "npc"), unit(0.5, "npc"), just=c("right", "center"), gp=gpar(cex=0.5, font=1))
+
+        popViewport()
+
+
       }
 
+
+    }
 
     ########################################################################################################################################################################################################
-
+    # VAL DEFINITIONS
+    ########################################################################################################################################################################################################
     ## DEFINES
     gene.height <- 10
     gene.lines <- 1.3
@@ -459,7 +450,6 @@ plotProfiles <-
     scale.y.offset <- 1.2
     vsize <- as.integer(dev.size()[1] * 150)
     xscale <- c(fstart, fend)
-
 
     seqlevels(txdb) <- fchr
     ### START PLOT
@@ -564,10 +554,12 @@ plotProfiles <-
     )
 
 
+    ## switch annot
+    if (is.null(ann)) sval=0.5 else sval=0.7
     fwd <-
       viewport(
         x = 0,
-        y = unit(gene.lines * rbumps + 0.5, "lines") + unit(0.5, "lines"),
+        y = unit(gene.lines * rbumps + 0.5, "lines") + unit(sval, "lines"),
         w = 1,
         h = unit(gene.lines * fbumps, "lines"),
         clip = "on",
@@ -588,17 +580,34 @@ plotProfiles <-
       plot.labels
     )
 
-    ########
+        ## switch annot
+    if (!is.null(ann)) {
+      ########
+      #annot
+      ########
+      annot <- viewport(x = 0, y = unit(gene.lines*rbumps+0.5, "lines") + unit(0.5, "lines") +
+                          unit(gene.lines*fbumps, "lines"), w = 1,
+                        h = unit(0.5, "lines"),
+                        just = c("left", "bottom"), name = "annot", xscale=xscale)
+
+      pushViewport(annot)
+      plot.annotation(ann, fchr, fstart, fend, xscale)
+      popViewport()
+
+    }
+
+    if (is.null(ann)) sval=0.2 else sval=0.7
+     ########
     #prof
     ########
     prof <-
       viewport(
         x = 0,
-        y = unit(gene.lines * rbumps + 0.5, "lines") + unit(0.2, "lines") +
+        y = unit(gene.lines * rbumps + 0.5, "lines") + unit(sval, "lines") +
           unit(gene.lines * fbumps, "lines"),
         w = 1,
         h = unit(1, "npc") - (
-          unit(gene.lines * rbumps + 0.5, "lines") + unit(0.2, "lines") +
+          unit(gene.lines * rbumps + 0.5, "lines") + unit(sval, "lines") +
             unit(gene.lines * fbumps, "lines")
         ),
         just = c("left", "bottom"),
@@ -685,3 +694,5 @@ plotProfiles <-
     popViewport() # main
     #main
   }
+
+
