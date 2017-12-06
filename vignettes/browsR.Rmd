@@ -10,12 +10,8 @@ vignette: >
 ---
 ```{r, warning=F, message=F}
 library(tsTools)
-library(TxDb.Dmelanogaster.UCSC.dm6.ensGene)
+require(TxDb.Dmelanogaster.UCSC.dm6.ensGene)
 library(RColorBrewer)
-require(HilbertVis)
-require(grid)
-require(lattice)
-
 ```
 
 

@@ -27,8 +27,9 @@ plotProfiles <-
     require(grid)
     require(IRanges)
     require(HilbertVis)
-    options(scipen = 100)
+    require(RColorBrewer)
 
+    options(scipen = 100)
 
     ########################################################################################################################################################################################################
     # FUNCTION DEFINITIONS
@@ -288,9 +289,8 @@ plotProfiles <-
       panel.background <- "#cccccc25"
 
       if (length(cols) == 0) {
-        require(RColorBrewer)
         cols <-
-          brewer.pal((ifelse(length(profs) > 2, length(profs), 3)) , "Dark2")
+          RColorBrewer::brewer.pal((ifelse(length(profs) > 2, length(profs), 3)) , "Dark2")
       }
 
       for (i in 1:length(profs)) {
@@ -301,7 +301,7 @@ plotProfiles <-
 
           xl <- c(fstart, seq(fstart, fend, length.out = vsize), fend)
           yl <-
-            c(0, shrinkVector(as.vector(profs[[i]][[fchr]])[fstart:fend], newLength =
+            c(0, HilbertVis::shrinkVector(as.vector(profs[[i]][[fchr]])[fstart:fend], newLength =
                                 vsize), 0)
           yl[is.na(yl)] <- 0
           #browser()
