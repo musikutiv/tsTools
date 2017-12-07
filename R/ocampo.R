@@ -25,7 +25,7 @@ ocampo <-
            spacing.high = 220,
            shift.low = -70,
            shift.high = 60,
-           mc.cores = 2) {
+           mc.cores = 1) {
 
     if (!requireNamespace("zoo", quietly = TRUE)) {
       stop("library 'zoo' is needed for this function to work. Please install it.",
