@@ -19,7 +19,7 @@ Paired-end data is aligned as follows using bowtie2.
 - BAM file is then converted to BED in which chr, start, end of the sequenced fragement is reported
 
 Cleaning up of orphaned reads is performed with this script taken from (https://www.biostars.org/p/95929/)
-```{python, eval = FALSE}
+```{python, eval = FALSE,python.reticulate = FALSE}
 #!/usr/bin/env python
 import csv
 import sys

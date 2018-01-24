@@ -6,7 +6,7 @@
 \usage{
 ocampo(coverage = coverage, references = references, beforeRef = 200,
   afterRef = 1000, smoothingWindow = 100, spacing.low = 130,
-  spacing.high = 220, shift.low = -70, shift.high = 60, mc.cores = 2)
+  spacing.high = 220, shift.low = -70, shift.high = 60, mc.cores = 1)
 }
 \arguments{
 \item{coverage}{a coverage object (\code{\link[IRanges]{RleList}} as returned by \code{\link[IRanges]{coverage}})}
