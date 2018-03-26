@@ -12,7 +12,23 @@ vignette: >
 library(tsTools)
 require(TxDb.Dmelanogaster.UCSC.dm6.ensGene)
 library(RColorBrewer)
+library(GEOquery)
+library(rtracklayer)
 ```
+
+##Installation
+
+`tsTools` is available on github (https://github.com/musikutiv/tsTools). Documentation is provided as Vignette.
+
+```{r, eval=F}
+install.packages("devtools")
+library(devtools)
+install_github("musikutiv/tsTools", build_vignettes=T)
+
+library(tsTools)
+browseVignettes("tsTools”)
+```
+
 
 
 the function `plotProfiles` takes the following parameters (bold = required)
@@ -32,16 +48,16 @@ ftitle | title of the plot
 collapse | collapse gene models (default = TRUE)
 with.genes.highlited | vector of gene ids that should be highlighted
 plot.labels | plot labels for genes (default = TRUE)
-grid | plot grid (default = TRUE)
+grid | plot grid (default = FALSE)
 with.average | plot average (default = FALSE)
 
 ## a simple example, one profile
 
-I load the profile from the packages. For sake of space the profile just consists of one chromosome. Therefore I have to explictly re-create a SimpleRleList object. Typicall a Granges to coverage conversion would yield a SimpleRleList for direct usage.
+I load the profile from the packages. For sake of space the profile just consists of one chromosome. Therefore I have to explictly re-create a SimpleRleList object. Typically a Granges to coverage conversion would yield a SimpleRleList for direct usage.
 
-The genomic annotations are taken from Bioconductors `TxDb.Dmelanogaster.UCSC.dm6.ensGene` library. Alternatively it can be created from GTF or GFF files using `GenomicFeatures` package.
+The genomic annotations are taken from Bioconductors `TxDb.Dmelanogaster.UCSC.dm6.ensGene` library. Alternatively it can be created from GTF or GFF files using the `GenomicFeatures` package.
 
-```{r, fig.height=2.5, fig.width=6}
+```{r, message=F, fig.width=6, fig.height=2}
 
 cov <- new("SimpleRleList")
 fpath <- system.file("extdata", "covx.rds", package="tsTools")
@@ -55,7 +71,7 @@ plotProfiles(fstart=1660000,fend=1720000,fchr="chrX", profs=list(MSL2=cov), cols
 
 In this example I simply re-use the same profile
 
-```{r, fig.height=3.5, fig.width=6}
+```{r, fig.height=3, fig.width=6}
 
 cov <- new("SimpleRleList")
 fpath <- system.file("extdata", "covx.rds", package="tsTools")
@@ -67,7 +83,7 @@ plotProfiles(fstart=1660000,fend=1720000,fchr="chrX", profs=list(MSL2=cov, MSL3=
 
 ## adding annotations
 
-```{r, fig.height=2.5, fig.width=6}
+```{r, fig.height=2, fig.width=6}
 fpath <- system.file("extdata", "msl2.bed", package="tsTools")
 peaks <- read.delim(fpath, header=F)
 peaks[,1] <- paste0("chr", peaks[,1])
@@ -76,6 +92,20 @@ ann <- list("MSL2 peaks"=data.frame(chr=peaks[,1], start=peaks[,2], end=peaks[,3
 
 plotProfiles(fstart=1660000,fend=1720000,fchr="chrX", profs=list(MSL2=cov), cols=c("red"),txdb=TxDb.Dmelanogaster.UCSC.dm6.ensGene, ann=ann)
 ```
+
+## getting profiles from GEO (GSM1941084)
+
+Using the `geoQuery` package download a bedgraph file from GEO. `rtracklayer` is then used to import the track which yieals a `GRanges` list. Which is then converted to a `SimpleRleList` required for the `plotProfiles` function. The chromosome names of the coverage has to be adjusted as they don't match the ones of the txdb annotation. 
+
+```{r, fig.height=2, fig.width=6, message=F, warning=F}
+filePaths = getGEOSuppFiles("GSM1941084")
+granges <- import(rownames(filePaths)[1])
+granges
+cov <- coverage(granges, weight = "score")
+names(cov) <- paste0("chr",names(cov))
+plotProfiles(fstart=1660000,fend=1720000,fchr="chrX", profs=list(MSL2=cov), cols=c("red"),txdb=TxDb.Dmelanogaster.UCSC.dm6.ensGene, ann=ann)
+```
+
 
 ```{r}
 sessionInfo()
