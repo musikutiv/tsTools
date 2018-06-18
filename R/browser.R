@@ -29,6 +29,15 @@ plotProfiles <-
     require(HilbertVis)
     require(RColorBrewer)
 
+    ########################################################################################################################################################################################################
+    # test args
+    ########################################################################################################################################################################################################
+
+    if ( !(fchr %in% lapply(profs, names)) )
+      stop("chromosome provided in parameter 'fchr' does not match chromosome names in coverages")
+    if ( !(fchr %in% levels(seqnames(genes(TxDb.Dmelanogaster.UCSC.dm3.ensGene)) )))
+       warning("chromosome provided in parameter 'fchr' does not match chromosome names in annotation object")
+
     options(scipen = 100)
 
     ########################################################################################################################################################################################################

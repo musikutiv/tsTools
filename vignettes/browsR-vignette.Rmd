@@ -8,6 +8,8 @@ vignette: >
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
+
+
 ```{r, warning=F, message=F}
 library(tsTools)
 require(TxDb.Dmelanogaster.UCSC.dm6.ensGene)
@@ -106,6 +108,13 @@ names(cov) <- paste0("chr",names(cov))
 plotProfiles(fstart=1660000,fend=1720000,fchr="chrX", profs=list(MSL2=cov), cols=c("red"),txdb=TxDb.Dmelanogaster.UCSC.dm6.ensGene, ann=ann)
 ```
 
+
+## Alternatives
+
+https://github.com/rstats-gsoc/gsoc2017/wiki/Interactive-Genome-Browser-in-R
+http://www.bioconductor.org/packages/release/bioc/html/GenomeGraphs.html
+https://bioconductor.org/packages/release/bioc/vignettes/Gviz/inst/doc/Gviz.pdf
+https://bioconductor.org/packages/release/bioc/html/ggbio.html
 
 ```{r}
 sessionInfo()
