@@ -111,6 +111,23 @@ ocampo <-
     df
   }
 
+#' Get ocampo parameters per instance (Tamas version using ccv)
+#'
+#' @param coverage a coverage object (\code{\link[IRanges]{RleList}} as returned by \code{\link[IRanges]{coverage}})
+#' @param references reference regions data frame with columns (chr, start, end). rownames will serve as id for output table
+#' @param beforeRef bps before reference to take for shift estimation
+#' @param afterRef bps after reference to take for shift estimation
+#' @param smoothingWindow size of the smoothing window.
+#' @param spacing.low minimum spacing allowed
+#' @param spacing.high maximum spacing allowed
+#' @param shift.low minimum shift allowed
+#' @param shift.high maximum shift allowed
+#' @param spacing.high maximum spacing allowed
+#' @param sigma_scaled scaling sigma for array model (recommended). Default FALSE
+#'
+#' @return a data frame with columns r (correlation), space, and shift for each reference provided
+#'
+#' @export
 
 ocampo2 <- function (coverage = coverage, references = reference, beforeRef = 200,
                      afterRef = 1000, smoothingWindow = 100, spacing.low = 130,

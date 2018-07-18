@@ -33,9 +33,9 @@ plotProfiles <-
     # test args
     ########################################################################################################################################################################################################
 
-    if ( !(fchr %in% lapply(profs, names)) )
+    if ( !(fchr %in% unlist(lapply(profs, names))) )
       stop("chromosome provided in parameter 'fchr' does not match chromosome names in coverages")
-    if ( !(fchr %in% levels(seqnames(genes(TxDb.Dmelanogaster.UCSC.dm3.ensGene)) )))
+    if ( !(fchr %in% levels(seqnames(genes(txdb)) )))
        warning("chromosome provided in parameter 'fchr' does not match chromosome names in annotation object")
 
     options(scipen = 100)
