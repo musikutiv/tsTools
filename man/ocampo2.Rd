@@ -12,7 +12,7 @@ ocampo2(coverage = coverage, references = reference, beforeRef = 200,
 \arguments{
 \item{coverage}{a coverage object (\code{\link[IRanges]{RleList}} as returned by \code{\link[IRanges]{coverage}})}
 
-\item{references}{reference regions data frame with columns (chr, start, end). rownames will serve as id for output table}
+\item{references}{reference regions data frame with columns (chr, start, end, strand). rownames will serve as id for output table}
 
 \item{beforeRef}{bps before reference to take for shift estimation}
 

@@ -1,7 +1,7 @@
 Package: tsTools
 Type: Package
 Title: Toolbox for Functional Genomics Data Processing in R
-Version: 0.1.0
+Version: 0.1.1
 Author: Tobias Straub
 Maintainer: Tobias Straub <tobias.straub@lmu.de>
 Description: R Toolbox for ChIPseq, MNaseSeq, RNASeq and alike

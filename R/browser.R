@@ -10,7 +10,7 @@
 #' @param ann a dataframe of annotations
 #' @param ylable the label of the y axis
 #' @param ylims list of ylimits for plotting the coverages. list(c(min, max), c(min, max))
-#' @param plotProfiles(10000,20000,"X", list(MSL2=cov), txdb=txdb)   a transcription database used for plotting gene models
+#' @param txdb a transcription database used for plotting gene models
 #' @param ftitle title of the plot
 #' @param collapse collapse gene models (default = TRUE)
 #' @param with.genes.highlited vector of gene ids that should be highlighted

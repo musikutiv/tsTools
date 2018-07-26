@@ -24,6 +24,8 @@ plotProfiles(fstart, fend, fchr, profs, cols = c(), ann = NULL,
 
 \item{ylims}{list of ylimits for plotting the coverages. list(c(min, max), c(min, max))}
 
+\item{txdb}{a transcription database used for plotting gene models}
+
 \item{ftitle}{title of the plot}
 
 \item{collapse}{collapse gene models (default = TRUE)}
@@ -37,8 +39,6 @@ plotProfiles(fstart, fend, fchr, profs, cols = c(), ann = NULL,
 \item{with.average}{plot average (default = FALSE)}
 
 \item{ylable}{the label of the y axis}
-
-\item{plotProfiles(10000, 20000, "X", }{list(MSL2=cov), txdb=txdb)   a transcription database used for plotting gene models}
 }
 \description{
 Plot coverages along genome

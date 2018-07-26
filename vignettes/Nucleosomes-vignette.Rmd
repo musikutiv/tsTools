@@ -9,7 +9,7 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-## Alignment of MNaseSeq-Data
+### Alignment of MNaseSeq-Data
 
 Paired-end data is aligned as follows using bowtie2.
 
@@ -70,7 +70,7 @@ bamToBed -i aligned.s.bam > aligned.bed 2>/dev/null
 cut -f 1,2,3,6 aligned.bed > aligned.s.bed
 ```
 
-## Conversion to coverage object
+### Conversion to coverage object
 
 ```{r, message=F, warning=F}
 library(tsTools)
@@ -85,20 +85,20 @@ cov <- bed2dyad(fpath,"PAIRED",1)
 
 ```
 
-## Autocorrelation Function 
+### Autocorrelation Function 
 
 The autocorrelation function on the signal vector can provide a hint as to whether we have something nucleosomal in the data. Given the beads on a string arrangement of nucleosomes we expect a periodic autocorrelation pattern. 
 
-```{r}
+```{r, fig.width=4, fig.height=4}
 
-acf(as.vector(cov[['IV']]), lag.max = 1000)
+acf(as.vector(cov[['IV']]), lag.max = 1000, main="", xlab="lag (bp)")
 
 ```
 
 
-## Cumulative Plots
+### Cumulative Plots
 
-```{r}
+```{r, fig.width=4, fig.height=4}
 data(ann)
 head(ann)
 ann <- ann[ann$chr=="IV",]
@@ -112,9 +112,9 @@ plot(x, apply(mat, 2, mean), type="l",
      xlab="position relative to center position", ylab="dyad density")
 ```
 
-row-wise normalization
+#### row-wise normalization
 
-```{r}
+```{r, fig.width=7.5, fig.height=4}
 mat.sq <- norm.square(mat)
 mat.sum <- norm.sum(mat)
 
@@ -125,7 +125,7 @@ plot(x, apply(mat.sum, 2, mean), type="l",
      xlab="position relative to center position", ylab="dyad density (normalized)", main="sum of row normalization")
 ```
 
-```{r}
+```{r, fig.width=4, fig.height=4}
 mat.bin <- bin.matrix.rows(mat.sum,25)
 x <- as.integer(colnames(mat.bin))
 plot(x, apply(mat.bin, 2, mean), type="l", 
@@ -138,29 +138,33 @@ plot(x, apply(mat.bin.smoothed, 2, mean), type="l",
 
 ```
 
-Cumulative plot with scatter
+### Cumulative plot with scatter
 
-```{r}
+```{r, fig.width=4, fig.height=4}
 cumPlot(mat.sum, base.col = "#FF0000")
 
 ```
 
 
 
-Heatmaps
+### Heatmaps
 
-```{r}
+```{r, fig.width=4, fig.height=4}
 library(grid)
 hmat <- meanScale(mat)
 plotRasterHeatmap(hmat)
 ```
 
-Getting Spacing and Phasing along Reference points
+### Getting Spacing and Phasing along Reference points
 
 ```{r}
 ann[1:10,]
 result <- ocampo(cov, ann[1:10,])
 result
 
+```
+
+```{r}
+sessionInfo()
 ```
 
