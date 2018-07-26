@@ -28,6 +28,7 @@ plotProfiles <-
     require(IRanges)
     require(HilbertVis)
     require(RColorBrewer)
+    require(AnnotationDbi)
 
     ########################################################################################################################################################################################################
     # test args
@@ -195,7 +196,7 @@ plotProfiles <-
       if (length(gene.frame) > 0) {
         for (i in 1:length(gene.frame)) {
           txts.names <-
-            suppressMessages(select(
+            suppressMessages(AnnotationDbi::select(
               txdb,
               keys = names(gene.frame)[i],
               columns = "TXNAME",
@@ -213,7 +214,7 @@ plotProfiles <-
             for (k in 1:length(txts)) {
               gene.id <-
                 suppressMessages(
-                  select(
+                  AnnotationDbi::select(
                     txdb,
                     keys = elementMetadata(txts[, 2])[k, 1],
                     columns = "GENEID",
@@ -501,7 +502,7 @@ plotProfiles <-
     get.no.tracks <- function(txdb, genes) {
       max(sapply(names(genes), function(x) {
         nrow(suppressMessages(
-          select(
+          AnnotationDbi::select(
             txdb,
             keys = x,
             columns = "TXNAME",
