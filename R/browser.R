@@ -461,7 +461,7 @@ plotProfiles <-
     vsize <- as.integer(dev.size()[1] * 150)
     xscale <- c(fstart, fend)
 
-    seqlevels(txdb) <- fchr
+    #seqlevels(txdb) <- fchr ### WTF?!
     ### START PLOT
 
     grid.newpage()
