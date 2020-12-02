@@ -4,10 +4,19 @@
 \alias{ocampo2}
 \title{Get ocampo parameters per instance (Tamas version using ccv)}
 \usage{
-ocampo2(coverage = coverage, references = reference, beforeRef = 200,
-  afterRef = 1000, smoothingWindow = 100, spacing.low = 130,
-  spacing.high = 220, shift.low = -70, shift.high = 70, mc.cores = 2,
-  sigma_scaled = FALSE)
+ocampo2(
+  coverage = coverage,
+  references = reference,
+  beforeRef = 200,
+  afterRef = 1000,
+  smoothingWindow = 100,
+  spacing.low = 130,
+  spacing.high = 220,
+  shift.low = -70,
+  shift.high = 70,
+  mc.cores = 2,
+  sigma_scaled = FALSE
+)
 }
 \arguments{
 \item{coverage}{a coverage object (\code{\link[IRanges]{RleList}} as returned by \code{\link[IRanges]{coverage}})}
@@ -29,8 +38,6 @@ ocampo2(coverage = coverage, references = reference, beforeRef = 200,
 \item{shift.high}{maximum shift allowed}
 
 \item{sigma_scaled}{scaling sigma for array model (recommended). Default FALSE}
-
-\item{spacing.high}{maximum spacing allowed}
 }
 \value{
 a data frame with columns r (correlation), space, and shift for each reference provided

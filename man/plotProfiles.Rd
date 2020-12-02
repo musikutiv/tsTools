@@ -4,10 +4,23 @@
 \alias{plotProfiles}
 \title{Plot coverages along genome}
 \usage{
-plotProfiles(fstart, fend, fchr, profs, cols = c(), ann = NULL,
-  ylabel = "coverage", ylims = list(), txdb, ftitle = NA, collapse = T,
-  with.genes.highlited = c(), plot.labels = T, grid = F,
-  with.average = F)
+plotProfiles(
+  fstart,
+  fend,
+  fchr,
+  profs,
+  cols = c(),
+  ann = NULL,
+  ylabel = "coverage",
+  ylims = list(),
+  txdb,
+  ftitle = NA,
+  collapse = T,
+  with.genes.highlited = c(),
+  plot.labels = T,
+  grid = F,
+  with.average = F
+)
 }
 \arguments{
 \item{fstart}{start of the genomic window (bp)}

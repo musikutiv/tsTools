@@ -4,8 +4,12 @@
 \alias{coverageWindowsCenteredStrandedParallel}
 \title{Get windowed strand-oriented coverages around center point, parallelized}
 \usage{
-coverageWindowsCenteredStrandedParallel(centers, window.size = 1000, coverage,
-  n.cores = 2)
+coverageWindowsCenteredStrandedParallel(
+  centers,
+  window.size = 1000,
+  coverage,
+  n.cores = 2
+)
 }
 \arguments{
 \item{centers}{a data frame of center points with columns 'chr', 'center', 'strand'}

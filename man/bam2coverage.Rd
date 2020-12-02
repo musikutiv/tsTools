@@ -4,8 +4,12 @@
 \alias{bam2coverage}
 \title{Convert a bam file to coverage}
 \usage{
-bam2coverage(file.id, type = c("SINGLE", "PAIRED"), fragment.length = 200,
-  chr.flt = NA)
+bam2coverage(
+  file.id,
+  type = c("SINGLE", "PAIRED"),
+  fragment.length = 200,
+  chr.flt = NA
+)
 }
 \arguments{
 \item{file.id}{path of the bam file}
