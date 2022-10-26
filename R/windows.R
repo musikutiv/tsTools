@@ -3,41 +3,47 @@
 #'
 #' Out-of-bound windows will be removed!
 #'
-#' @param centers a data frame of center points with columns 'chr', 'center', 'strand'
+#' @param centers a named GRanges object (\code{\link[GenomicRanges]{Granges}}
 #' @param window.size the size of the window surrounding the center position, default 1000
 #' @param coverage a coverage object (\code{\link[IRanges]{RleList}} as returned by \code{\link[IRanges]{coverage}})
 #'
 #' @return a matrix
 #'
 #' @export
-coverageWindowsCenteredStranded <- function(centers, window.size=1000, coverage) {
+coverageWindowsCenteredStranded <- function (centers, window.size = 1000, coverage) {
 
-  centers <- centers[centers$chr %in% names(coverage),]
+  ## only coverages with enters in centers
+  coverage <- coverage[names(coverage) %in% seqlevels(centers)]
+
+  # centers <- centers[centers$chr %in% names(coverage),]
 
   result <- lapply(names(coverage), function(x) {
     my.cov <- coverage[[x]]
-    my.centers <- centers[centers$chr==x,]
-    mw.views <- IRanges::Views(my.cov, start=my.centers$center-ceiling(window.size/2), width=window.size+1)
-    ## remove out-of bounds views
-    flt <- start(mw.views)>0 & end(mw.views) < length(my.cov)
-    mw.views <- mw.views[flt,]
-    my.centers <- my.centers[flt,]
+    my.centers <- centers[seqnames(centers) == x, ]
+    mw.views <- IRanges::Views(my.cov, start = start(my.centers) -
+                                 ceiling(window.size/2), width = window.size + 1)
+    flt <- start(mw.views) > 0 & end(mw.views) < length(my.cov)
+    mw.views <- mw.views[flt, ]
+    my.centers <- my.centers[flt]
     if (length(mw.views) > 0) {
       mat <- as.matrix(mw.views)
-      colnames(mat) <- seq(from=(0-ceiling(window.size/2)), to=0+ceiling(window.size/2))
-      rownames(mat) <- rownames(my.centers)
+      colnames(mat) <- seq(from = (0 - ceiling(window.size/2)),
+                           to = 0 + ceiling(window.size/2))
+      rownames(mat) <- names(centers)
       return(mat)
-    } else {
+    }
+    else {
       return(NULL)
     }
   })
-
   mat <- Reduce(rbind, result)
-  centers <- centers[rownames(centers) %in% rownames(mat),]
-  match(rownames(centers), rownames(mat)) -> o
-  mat <- mat[o,]
-  mat[centers$strand=="-",] <- t(apply(mat[centers$strand=="-",],1,rev))
-  colnames(mat) <- seq(-ceiling(window.size/2),ceiling(window.size/2))
+  centers <- centers[names(centers) %in% rownames(mat),]
+  o <- match(names(centers), rownames(mat))
+  mat <- mat[o, ]
+  if (sum(strand(centers) == "-") > 0) {
+    mat[as.vector(strand(centers) == "-"), ] <- t(apply(mat[as.vector(strand(centers) == "-"), ], 1, rev))
+  }
+  colnames(mat) <- seq(-ceiling(window.size/2), ceiling(window.size/2))
   mat
 }
 
@@ -45,7 +51,7 @@ coverageWindowsCenteredStranded <- function(centers, window.size=1000, coverage)
 #'
 #' Out-of-bound windows will be removed!
 #'
-#' @param centers a data frame of center points with columns 'chr', 'center', 'strand'
+#' @param centers a named GRanges object (\code{\link[GenomicRanges]{Granges}}
 #' @param window.size the size of the window surrounding the center position, default 1000
 #' @param coverage a coverage object (\code{\link[IRanges]{RleList}} as returned by \code{\link[IRanges]{coverage}})
 #' @param n.cores number of processor cores to use. If not defined all detected cores will be used)
@@ -61,32 +67,39 @@ coverageWindowsCenteredStrandedParallel <- function(centers, window.size=1000, c
   }
   if (is.null(n.cores)) n.cores <- detectCores()
 
-  centers <- centers[centers$chr %in% names(coverage),]
+  ## only coverages with enters in centers
+  coverage <- coverage[names(coverage) %in% seqlevels(centers)]
+
+  # centers <- centers[centers$chr %in% names(coverage),]
 
   result <- mclapply(names(coverage), function(x) {
     my.cov <- coverage[[x]]
-    my.centers <- centers[centers$chr==x,]
-    mw.views <- IRanges::Views(my.cov, start=my.centers$center-ceiling(window.size/2), width=window.size+1)
-    ## remove out-of bounds views
-    flt <- start(mw.views)>0 & end(mw.views) < length(my.cov)
-    mw.views <- mw.views[flt,]
-    my.centers <- my.centers[flt,]
+    my.centers <- centers[seqnames(centers) == x, ]
+    mw.views <- IRanges::Views(my.cov, start = start(my.centers) -
+                                 ceiling(window.size/2), width = window.size + 1)
+    flt <- start(mw.views) > 0 & end(mw.views) < length(my.cov)
+    mw.views <- mw.views[flt, ]
+    my.centers <- my.centers[flt]
     if (length(mw.views) > 0) {
       mat <- as.matrix(mw.views)
-      colnames(mat) <- seq(from=(0-ceiling(window.size/2)), to=0+ceiling(window.size/2))
-      rownames(mat) <- rownames(my.centers)
+      colnames(mat) <- seq(from = (0 - ceiling(window.size/2)),
+                           to = 0 + ceiling(window.size/2))
+      rownames(mat) <- names(centers)
       return(mat)
-    } else {
+    }
+    else {
       return(NULL)
     }
   }, mc.cores = n.cores)
 
   mat <- Reduce(rbind, result)
-  centers <- centers[rownames(centers) %in% rownames(mat),]
-  match(rownames(centers), rownames(mat)) -> o
-  mat <- mat[o,]
-  mat[centers$strand=="-",] <- t(apply(mat[centers$strand=="-",],1,rev))
-  colnames(mat) <- seq(-ceiling(window.size/2),ceiling(window.size/2))
+  centers <- centers[names(centers) %in% rownames(mat),]
+  o <- match(names(centers), rownames(mat))
+  mat <- mat[o, ]
+  if (sum(strand(centers) == "-") > 0) {
+    mat[as.vector(strand(centers) == "-"), ] <- t(apply(mat[as.vector(strand(centers) == "-"), ], 1, rev))
+  }
+  colnames(mat) <- seq(-ceiling(window.size/2), ceiling(window.size/2))
   mat
 }
 
@@ -95,7 +108,7 @@ coverageWindowsCenteredStrandedParallel <- function(centers, window.size=1000, c
 #'
 #' Out-of-bound windows will be removed!
 #'
-#' @param windows a data frame of windows with columns 'chr', 'start', 'end', 'strand'
+#' @param windows a named GRanges object (\code{\link[GenomicRanges]{Granges}}
 #' @param coverage a coverage object (\code{\link[IRanges]{RleList}} as returned by \code{\link[IRanges]{coverage}})
 #'
 #' @return a matrix
@@ -103,23 +116,23 @@ coverageWindowsCenteredStrandedParallel <- function(centers, window.size=1000, c
 #' @export
 coverageWindowsStranded <- function(windows,  coverage) {
 
-  #  cl <- makeCluster(getOption("cl.cores", 8))
-  #  clusterExport(cl, list("centers","coverage","window.size") , envir=environment())
+  ## only coverages with enters in centers
+  coverage <- coverage[names(coverage) %in% seqlevels(windows)]
 
-  windows <- windows[windows$chr %in% names(coverage),]
+  # windows <- windows[seqnames(windows) %in% names(coverage)]
 
   #  result <- parSapply(cl, names(cov), function(x) {
   result <- lapply(names(coverage), function(x) {
     my.cov <- coverage[[x]]
-    my.windows <- windows[windows$chr==x,]
-    mw.views <- IRanges::Views(my.cov, start=my.windows$start, my.windows$end)
+    my.windows <- windows[seqnames(windows)==x,]
+    mw.views <- IRanges::Views(my.cov, start=start(my.windows), end(my.windows))
     ## remove out-of bounds views
     flt <- start(mw.views)>0 & end(mw.views) < length(my.cov)
     mw.views <- mw.views[flt,]
     my.windows <- my.windows[flt,]
     if (length(mw.views) > 0) {
       mat <- as.matrix(mw.views)
-      rownames(mat) <- rownames(my.windows)
+      rownames(mat) <- names(my.windows)
       return(mat)
     } else {
       return(NULL)
@@ -127,10 +140,12 @@ coverageWindowsStranded <- function(windows,  coverage) {
   })
   #  stopCluster(cl)
   mat <- Reduce(rbind, result)
-  windows <- windows[rownames(windows) %in% rownames(mat),]
-  match(rownames(windows), rownames(mat)) -> o
+  windows <- windows[names(windows) %in% rownames(mat),]
+  match(names(windows), rownames(mat)) -> o
   mat <- mat[o,]
-  mat[windows$strand=="-",] <- t(apply(mat[windows$strand=="-",],1,rev))
+  if (sum(strand(windows) == "-") > 0) {
+    mat[as.vector(strand(windows) == "-"), ] <- t(apply(mat[as.vector(strand(windows) == "-"), ], 1, rev))
+  }
   mat
 }
 
@@ -153,29 +168,35 @@ coverageWindowsStrandedParallel <- function(windows,  coverage, n.cores=2) {
   }
   if (is.null(n.cores)) n.cores <- detectCores()
 
-  windows <- windows[windows$chr %in% names(coverage),]
+
+  ## only coverages with enters in centers
+  coverage <- coverage[names(coverage) %in% seqlevels(windows)]
+
+  # windows <- windows[seqnames(windows) %in% names(coverage)]
 
   result <- mclapply(names(coverage), function(x) {
     my.cov <- coverage[[x]]
-    my.windows <- windows[windows$chr==x,]
-    mw.views <- IRanges::Views(my.cov, start=my.windows$start, my.windows$end)
+    my.windows <- windows[seqnames(windows)==x,]
+    mw.views <- IRanges::Views(my.cov, start=start(my.windows), end(my.windows))
     ## remove out-of bounds views
     flt <- start(mw.views)>0 & end(mw.views) < length(my.cov)
     mw.views <- mw.views[flt,]
     my.windows <- my.windows[flt,]
     if (length(mw.views) > 0) {
       mat <- as.matrix(mw.views)
-      rownames(mat) <- rownames(my.windows)
+      rownames(mat) <- names(my.windows)
       return(mat)
     } else {
       return(NULL)
     }
-  })
+  }, mc.cores = n.cores)
   mat <- Reduce(rbind, result)
-  windows <- windows[rownames(windows) %in% rownames(mat),]
-  match(rownames(windows), rownames(mat)) -> o
+  windows <- windows[names(windows) %in% rownames(mat),]
+  match(names(windows), rownames(mat)) -> o
   mat <- mat[o,]
-  mat[windows$strand=="-",] <- t(apply(mat[windows$strand=="-",],1,rev))
+  if (sum(strand(windows) == "-") > 0) {
+    mat[as.vector(strand(windows) == "-"), ] <- t(apply(mat[as.vector(strand(windows) == "-"), ], 1, rev))
+  }
   mat
 }
 

@@ -68,6 +68,10 @@ ocampo <-
       )
     rownames(windows) <- rownames(references)
 
+    # temporary hack
+    windows <- GRanges(windows$chr, IRanges(windows$start, windows$end), strand=windows$strand)
+    names(windows) <- rownames(references)
+
     mat <- coverageWindowsStranded(windows, coverage)
 
     res <-

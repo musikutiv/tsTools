@@ -75,6 +75,7 @@ cut -f 1,2,3,6 aligned.bed > aligned.s.bed
 ```{r, message=F, warning=F}
 library(tsTools)
 library(IRanges)
+library(GenomicRanges)
 ```
 
 As an example we load the data included in the package (S. cerevisiae MNase-Seq, subset to chromosome IV)
@@ -102,10 +103,8 @@ acf(as.vector(cov[['IV']]), lag.max = 1000, main="", xlab="lag (bp)")
 data(ann)
 head(ann)
 ann <- ann[ann$chr=="IV",]
-centers <- data.frame(chr=ann$chr, 
-                      center=ifelse(ann$strand=="+", ann$start, ann$end), 
-                      strand=ann$strand)
-rownames(centers) <- rownames(ann)
+centers <- GRanges(ann$chr, IRanges(ifelse(ann$strand=="+", ann$start, ann$end)), strand=ann$strand)
+names(centers) <- rownames(ann)
 mat <- coverageWindowsCenteredStranded(centers, window.size=2000, cov)
 x <- seq(-1000,1000)
 plot(x, apply(mat, 2, mean), type="l", 
@@ -144,8 +143,6 @@ plot(x, apply(mat.bin.smoothed, 2, mean), type="l",
 cumPlot(mat.sum, base.col = "#FF0000")
 
 ```
-
-
 
 ### Heatmaps
 
