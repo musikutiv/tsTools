@@ -16,7 +16,7 @@ remotes::install_github("cderv/pandoc")
 library(pandoc)
 # Install version
 pandoc_install("2.7.3")
-
+```
 
 ## Installation
 
