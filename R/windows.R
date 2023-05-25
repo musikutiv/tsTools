@@ -29,7 +29,7 @@ coverageWindowsCenteredStranded <- function (centers, window.size = 1000, covera
       mat <- as.matrix(mw.views)
       colnames(mat) <- seq(from = (0 - ceiling(window.size/2)),
                            to = 0 + ceiling(window.size/2))
-      rownames(mat) <- names(centers)
+      rownames(mat) <- names(my.centers)
       return(mat)
     }
     else {
