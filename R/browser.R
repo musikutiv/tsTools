@@ -187,40 +187,27 @@ plotProfiles <-
       median(profile[window])
     }
     plot.genes <- function(vp, strand, frame.genes, bumps, gene.height, label.shift,
-                           collapse,  with.genes.highlited = c(), plot.labels) {
-      #browser()
+                           collapse,  with.genes.highlited = c(), plot.labels,
+                           gene_tx_map, frame_transcripts, exon_tx_map, tx_to_gene) {
       exon <- 2.0
       gene.frame <- frame.genes[strand(frame.genes) == strand]
       pushViewport(vp)
-      #grid.rect(gp = gpar(col = "grey"))
       if (length(gene.frame) > 0) {
         for (i in 1:length(gene.frame)) {
-          txts.names <-
-            suppressMessages(AnnotationDbi::select(
-              txdb,
-              keys = names(gene.frame)[i],
-              columns = "TXNAME",
-              keytype = "GENEID"
-            )$TXNAME)
-          txts <- transcripts(txdb, filter = list(tx_name = txts.names))
+          current_gene_id <- names(gene.frame)[i]
+          # Use pre-fetched gene-to-transcript mapping instead of DB query
+          txts.names <- gene_tx_map$TXNAME[gene_tx_map$GENEID == current_gene_id]
+          if (length(txts.names) == 0) next
+          # Filter pre-fetched transcripts instead of DB query
+          txts <- frame_transcripts[mcols(frame_transcripts)$tx_name %in% txts.names]
           if (length(txts) > 0) {
             if (collapse) {
-              filter.longest.txt <- function(txts) {
-                txts[which.max(width(txts))]
-              }
-
-              txts <- filter.longest.txt(txts)
+              txts <- txts[which.max(width(txts))]
             }
             for (k in 1:length(txts)) {
-              gene.id <-
-                suppressMessages(
-                  AnnotationDbi::select(
-                    txdb,
-                    keys = elementMetadata(txts[, 2])[k, 1],
-                    columns = "GENEID",
-                    keytype = "TXNAME"
-                  )$GENEID
-                )
+              tx_name_k <- mcols(txts)$tx_name[k]
+              # Use pre-computed tx_to_gene mapping instead of DB query
+              gene.id <- tx_to_gene[tx_name_k]
               col <-
                 ifelse(gene.id %in% with.genes.highlited,
                        "#FFAAAA",
@@ -236,7 +223,7 @@ plotProfiles <-
                                     2)
               }  else {
                 t1  <- ((k - 1) * gene.height + gene.height / 2) - (label.shift / 2)
-              } #fw
+              }
               ts.grid.rect(start(txts[k]),
                            end(txts[k]),
                            t1,
@@ -244,14 +231,13 @@ plotProfiles <-
                            lcol = lcol,
                            lwd = 2)
 
-              exons <-
-                exons(txdb, filter = list(tx_name = elementMetadata(txts[, 2])[1, 1]))
-
-              if (length(exons) > 0) {
-                for (l in 1:length(exons)) {
+              # Use pre-fetched exon data instead of DB query
+              exon_data <- exon_tx_map[exon_tx_map$TXNAME == tx_name_k, ]
+              if (nrow(exon_data) > 0) {
+                for (l in 1:nrow(exon_data)) {
                   ts.grid.rect(
-                    start(exons[l]),
-                    end(exons[l]),
+                    exon_data$EXONSTART[l],
+                    exon_data$EXONEND[l],
                     t1 - exon,
                     t1 + exon,
                     col = col,
@@ -486,34 +472,66 @@ plotProfiles <-
 
     frameRange <- GRanges(fchr, IRanges(fstart, fend))
 
-    all.genes <- genes(txdb)
     frame.genes <- subsetByOverlaps(genes(txdb), frameRange)
     frame.txts <- subsetByOverlaps(transcripts(txdb), frameRange)
     frame.genes.rev <- frame.genes[strand(frame.genes) == "-"]
     frame.genes.fwd <- frame.genes[strand(frame.genes) == "+"]
 
-    ## how many bumps? one gene
-
-    #gff.frame <- get.allfeatures.in.frame(gff, fchr, fstart, fend)
-    #gene.frame.rev <- get.namedOrientation(get.namedFeatures(gff.frame, "gene"), "-")
-    #gene.frame.fwd <- get.namedOrientation(get.namedFeatures(gff.frame, "gene"), "+")
-
-    ## max number of transcript isoforms
-    get.no.tracks <- function(txdb, genes) {
-      max(sapply(names(genes), function(x) {
-        nrow(suppressMessages(
-          AnnotationDbi::select(
-            txdb,
-            keys = x,
-            columns = "TXNAME",
-            keytype = "GENEID"
-          )
-        ))
-      }))
+    ## Pre-fetch all gene-to-transcript mappings in one batch query
+    gene_ids_in_frame <- names(frame.genes)
+    if (length(gene_ids_in_frame) > 0) {
+      gene_tx_map <- suppressMessages(
+        AnnotationDbi::select(
+          txdb,
+          keys = gene_ids_in_frame,
+          columns = "TXNAME",
+          keytype = "GENEID"
+        )
+      )
+    } else {
+      gene_tx_map <- data.frame(GENEID = character(0), TXNAME = character(0))
     }
 
-    rbumps <- ifelse(collapse, 1, get.no.tracks(txdb, frame.genes.rev))
-    fbumps <- ifelse(collapse, 1, get.no.tracks(txdb, frame.genes.fwd))
+    ## Pre-fetch all transcripts for the frame
+    all_tx_names <- unique(gene_tx_map$TXNAME)
+    if (length(all_tx_names) > 0) {
+      frame_transcripts <- transcripts(txdb, filter = list(tx_name = all_tx_names))
+    } else {
+      frame_transcripts <- GRanges()
+    }
+
+    ## Pre-fetch all exons for transcripts in frame
+    if (length(all_tx_names) > 0) {
+      frame_exons <- exons(txdb, filter = list(tx_name = all_tx_names))
+      # Get exon-to-transcript mapping
+      exon_tx_map <- suppressMessages(
+        AnnotationDbi::select(
+          txdb,
+          keys = all_tx_names,
+          columns = c("EXONID", "EXONSTART", "EXONEND"),
+          keytype = "TXNAME"
+        )
+      )
+    } else {
+      frame_exons <- GRanges()
+      exon_tx_map <- data.frame(TXNAME = character(0), EXONID = integer(0),
+                                 EXONSTART = integer(0), EXONEND = integer(0))
+    }
+
+    ## Pre-compute tx_name to gene_id reverse mapping
+    tx_to_gene <- setNames(gene_tx_map$GENEID, gene_tx_map$TXNAME)
+
+    ## max number of transcript isoforms (using pre-fetched data)
+    get.no.tracks <- function(genes, gene_tx_map) {
+      if (length(genes) == 0) return(1)
+      gene_ids <- names(genes)
+      counts <- table(gene_tx_map$GENEID[gene_tx_map$GENEID %in% gene_ids])
+      if (length(counts) == 0) return(1)
+      max(counts)
+    }
+
+    rbumps <- ifelse(collapse, 1, get.no.tracks(frame.genes.rev, gene_tx_map))
+    fbumps <- ifelse(collapse, 1, get.no.tracks(frame.genes.fwd, gene_tx_map))
 
     ########
     #xscale
@@ -560,7 +578,11 @@ plotProfiles <-
       label.shift,
       collapse,
       with.genes.highlited = c(),
-      plot.labels
+      plot.labels,
+      gene_tx_map = gene_tx_map,
+      frame_transcripts = frame_transcripts,
+      exon_tx_map = exon_tx_map,
+      tx_to_gene = tx_to_gene
     )
 
 
@@ -587,7 +609,11 @@ plotProfiles <-
       label.shift,
       collapse,
       with.genes.highlited = c(),
-      plot.labels
+      plot.labels,
+      gene_tx_map = gene_tx_map,
+      frame_transcripts = frame_transcripts,
+      exon_tx_map = exon_tx_map,
+      tx_to_gene = tx_to_gene
     )
 
         ## switch annot
