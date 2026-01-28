@@ -45,13 +45,24 @@ fstart <- 1660000
 fend <- 1720000
 fchr <- "chrX"
 
+# Create GRanges objects for new API
+single_range <- GRanges("chrX", IRanges(fstart, fend))
+names(single_range) <- "Region 1"
+
+# Multiple ranges
+multi_range <- GRanges("chrX", IRanges(
+  c(1660000, 1720000, 1780000),
+  c(1720000, 1780000, 1840000)
+))
+names(multi_range) <- c("Region A", "Region B", "Region C")
+
 # Create multiple profiles (typical use case)
 profs_single <- list(MSL2 = cov)
 profs_three <- list(MSL2 = cov, MSL3 = cov, MSL4 = cov)
 
 # Warm-up run
 cat("Warming up...\n")
-pdf(NULL)  # Use null device for benchmarking
+pdf(NULL)
 dev.control("enable")
 plotProfiles(
   fstart = fstart, fend = fend, fchr = fchr,
@@ -90,8 +101,11 @@ run_benchmark <- function(name, expr, n_runs = 5) {
 # Run benchmarks
 results <- list()
 
-results$single_profile <- run_benchmark(
-  "Single profile",
+# Legacy API tests
+cat("\n========== LEGACY API (fstart/fend/fchr) ==========\n")
+
+results$legacy_single <- run_benchmark(
+  "Legacy: Single profile",
   quote(plotProfiles(
     fstart = fstart, fend = fend, fchr = fchr,
     profs = profs_single, cols = c("red"),
@@ -99,8 +113,8 @@ results$single_profile <- run_benchmark(
   ))
 )
 
-results$three_profiles <- run_benchmark(
-  "Three profiles",
+results$legacy_three <- run_benchmark(
+  "Legacy: Three profiles",
   quote(plotProfiles(
     fstart = fstart, fend = fend, fchr = fchr,
     profs = profs_three, cols = brewer.pal(3, "Set1"),
@@ -108,58 +122,67 @@ results$three_profiles <- run_benchmark(
   ))
 )
 
-results$with_annotation <- run_benchmark(
-  "Single profile + annotation",
-  quote(plotProfiles(
-    fstart = fstart, fend = fend, fchr = fchr,
-    profs = profs_single, cols = c("red"),
-    txdb = txdb, ann = ann
-  ))
-)
+# GRanges API tests
+cat("\n========== NEW API (GRanges) ==========\n")
 
-results$larger_window <- run_benchmark(
-  "Larger window (120kb)",
+results$granges_single <- run_benchmark(
+  "GRanges: Single range",
   quote(plotProfiles(
-    fstart = fstart, fend = fstart + 120000, fchr = fchr,
+    ranges = single_range,
     profs = profs_single, cols = c("red"),
     txdb = txdb
   ))
 )
+
+results$granges_multi <- run_benchmark(
+  "GRanges: Multi-range (3 ranges)",
+  quote(plotProfiles(
+    ranges = multi_range,
+    profs = profs_single, cols = c("red"),
+    txdb = txdb
+  ))
+)
+
+# Calculate per-range time for multi-range
+per_range_time <- results$granges_multi$median / 3
 
 # Print summary
 cat("\n\n========== BENCHMARK SUMMARY ==========\n")
-for (r in results) {
-  cat(sprintf("%-30s: median=%.4fs, mean=%.4fs, sd=%.4fs\n",
-              r$name, r$median, r$mean, r$sd))
-}
+cat("Legacy API:\n")
+cat(sprintf("  %-35s: median=%.4fs\n", results$legacy_single$name, results$legacy_single$median))
+cat(sprintf("  %-35s: median=%.4fs\n", results$legacy_three$name, results$legacy_three$median))
+cat("\nGRanges API:\n")
+cat(sprintf("  %-35s: median=%.4fs\n", results$granges_single$name, results$granges_single$median))
+cat(sprintf("  %-35s: median=%.4fs (total), %.4fs (per range)\n",
+            results$granges_multi$name, results$granges_multi$median, per_range_time))
 cat("=========================================\n")
 
-# Profiling with Rprof
-cat("\n\n========== PROFILING (Single profile) ==========\n")
-Rprof("bench/profile_output.out", memory.profiling = TRUE, line.profiling = TRUE)
+# Verify return types
+cat("\n\n========== RETURN TYPE VERIFICATION ==========\n")
 pdf(NULL)
 dev.control("enable")
-for (i in 1:3) {
-  plotProfiles(
-    fstart = fstart, fend = fend, fchr = fchr,
-    profs = profs_single, cols = c("red"),
-    txdb = txdb
-  )
-}
+
+# Single range returns single grob
+grob_single <- plotProfiles(
+  ranges = single_range,
+  profs = profs_single, cols = c("red"),
+  txdb = txdb
+)
+cat(sprintf("Single range return type: %s\n", class(grob_single)[1]))
+
+# Multiple ranges return list of grobs
+grob_multi <- plotProfiles(
+  ranges = multi_range,
+  profs = profs_single, cols = c("red"),
+  txdb = txdb
+)
+cat(sprintf("Multi-range return type: %s (length=%d)\n", class(grob_multi)[1], length(grob_multi)))
+cat(sprintf("Multi-range names: %s\n", paste(names(grob_multi), collapse = ", ")))
+cat(sprintf("Each element type: %s\n", class(grob_multi[[1]])[1]))
+
 dev.off()
-Rprof(NULL)
-
-# Summarize profile
-cat("\nProfile summary (top 20 functions by total time):\n")
-prof_summary <- summaryRprof("bench/profile_output.out")
-print(head(prof_summary$by.total, 20))
-
-cat("\n\nProfile summary (top 20 functions by self time):\n")
-print(head(prof_summary$by.self, 20))
-
-cat("\n\nTotal sampling time:", prof_summary$sampling.time, "seconds\n")
+cat("=========================================\n")
 
 # Save results
-saveRDS(list(results = results, profile = prof_summary),
-        "bench/benchmark_results.rds")
+saveRDS(results, "bench/benchmark_results.rds")
 cat("\nResults saved to bench/benchmark_results.rds\n")
