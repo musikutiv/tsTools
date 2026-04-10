@@ -11,7 +11,7 @@
 #' @param fstart Deprecated. Start of the genomic window (bp). Use \code{ranges} instead.
 #' @param fend Deprecated. End of the genomic window (bp). Use \code{ranges} instead.
 #' @param fchr Deprecated. Chromosome of the genomic window. Use \code{ranges} instead.
-#' @param profs Named list of coverages to be plotted (SimpleRleList objects).
+#' @param profs Named list of coverages to be plotted (RleList objects, including SimpleRleList and CompressedRleList).
 #' @param cols Colors of the profiles.
 #' @param ann A named list of annotation dataframes. Each dataframe should have
 #'   columns: chr, start, end, col (optional), label (optional).
@@ -297,7 +297,7 @@ plotProfiles <- function(ranges = NULL, fstart = NULL, fend = NULL, fchr = NULL,
     }
 
     for (i in 1:length(profs)) {
-      if (inherits(profs[[i]], "SimpleRleList")) {
+      if (is(profs[[i]], "RleList")) {
         xl <- c(fstart, seq(fstart, fend, length.out = vsize), fend)
         yl <- c(0, HilbertVis::shrinkVector(
           as.vector(profs[[i]][[fchr]])[fstart:fend], newLength = vsize), 0)
